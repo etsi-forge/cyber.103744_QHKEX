@@ -4,7 +4,7 @@
  "CYBER; Quantum-safe Hybrid Key Exchanges. The code is not intended for production use.
  It is intended to be a reference implementation for test.
  
- More information and standards download at the [work item page](https://portal.etsi.org/webapp/WorkProgram/Report_WorkItem.asp?WKI_ID=56659). 
+ More information and standards download at the [work item page](https://portal.etsi.org/webapp/WorkProgram/Report_WorkItem.asp?WKI_ID=56901). 
  
  ### Usage ###
  

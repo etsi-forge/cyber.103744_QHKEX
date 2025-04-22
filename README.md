@@ -1,6 +1,6 @@
 ## TS 103 744 Quantum-safe Hybrid Key Exchanges ##
 
- Informative reference implementation as reported in Annex C of ETSI TS 103 744,
+ Informative reference implementation as reported in Annex D of ETSI TS 103 744,
  "CYBER; Quantum-safe Hybrid Key Exchanges. The code is not intended for production use.
  It is intended to be a reference implementation for test.
  
@@ -16,7 +16,7 @@
   
  ### Build instructions ###
  
-This library requires OpenSSL version 1.1.1d libcrypto.
+This library requires OpenSSL version 3.x.x libcrypto.
  
      gcc -Wall -o etsi-hkex-test main.c qshkex.c -lcrypto
      ./etsi-hkex-test

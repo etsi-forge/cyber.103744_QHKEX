@@ -36,6 +36,7 @@
 
 void print_array(const char *label, const uint8_t *array, const uint32_t alength);
 void ascii_hex_strings_to_uint8(uint8_t *array, uint32_t *alength, const uint32_t scount, ...);
+void *my_memcpy(void *dst, const void *src, size_t byte_len);
 
 int hkex_concat_hkdf(const EVP_MD *md_type, uint8_t *key_material, const uint32_t klength, const uint8_t *psk,
                 const uint32_t plength, const uint8_t *k1, const uint32_t k1length, const uint8_t *k2,

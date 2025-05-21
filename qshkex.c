@@ -18,7 +18,7 @@
 #include <openssl/crypto.h>
 
 /* Memory helper functions to handle null values */
-static inline void *my_memcpy(void *dst, const void *src, size_t byte_len)
+void *my_memcpy(void *dst, const void *src, size_t byte_len)
 {
     if (src == NULL || dst == NULL) {
         return dst;

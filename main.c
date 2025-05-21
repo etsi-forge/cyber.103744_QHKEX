@@ -48,18 +48,18 @@ const char *cids_concatenate_hkdf[TEST_VECTOR_CNT] = {
     "5531"  // HMACwSHA384, ECDH with BP-P384,    MLKEM1024, CatKDF
 };
 const char *cids_concatenate_kmac[TEST_VECTOR_CNT] = {
-    "7111", // KMAC128, ECDH with P256,       MLKEM512,  CatKDF
-    "7711", // KMAC128, ECDH with Curve25519, MLKEM512,  CatKDF
-    "7411", // KMAC128, ECDH with BP-P256,    MLKEM512,  CatKDF
-    "7121", // KMAC128, ECDH with P256,       MLKEM768,  CatKDF
-    "7721", // KMAC128, ECDH with Curve25519, MLKEM768,  CatKDF
-    "7421", // KMAC128, ECDH with BP-P256,    MLKEM768,  CatKDF
-    "8221", // KMAC256, ECDH with P384,       MLKEM768,  CatKDF
-    "8821", // KMAC256, ECDH with Curve448,   MLKEM768,  CatKDF
-    "8521", // KMAC256, ECDH with BP-P384,    MLKEM768,  CatKDF
-    "8231", // KMAC256, ECDH with P384,       MLKEM1024, CatKDF
-    "8831", // KMAC256, ECDH with Curve448,   MLKEM1024, CatKDF
-    "8531"  // KMAC256, ECDH with BP-P384,    MLKEM1024, CatKDF
+    "7111", // KMAC128, ECDH with P256,           MLKEM512,  CatKDF
+    "7711", // KMAC128, ECDH with Curve25519,     MLKEM512,  CatKDF
+    "7411", // KMAC128, ECDH with BP-P256,        MLKEM512,  CatKDF
+    "7121", // KMAC128, ECDH with P256,           MLKEM768,  CatKDF
+    "7721", // KMAC128, ECDH with Curve25519,     MLKEM768,  CatKDF
+    "7421", // KMAC128, ECDH with BP-P256,        MLKEM768,  CatKDF
+    "8221", // KMAC256, ECDH with P384,           MLKEM768,  CatKDF
+    "8821", // KMAC256, ECDH with Curve448,       MLKEM768,  CatKDF
+    "8521", // KMAC256, ECDH with BP-P384,        MLKEM768,  CatKDF
+    "8231", // KMAC256, ECDH with P384,           MLKEM1024, CatKDF
+    "8831", // KMAC256, ECDH with Curve448,       MLKEM1024, CatKDF
+    "8531"  // KMAC256, ECDH with BP-P384,        MLKEM1024, CatKDF
 };
 
 const char *cids_cascade_hkdf[TEST_VECTOR_CNT] = {
@@ -91,18 +91,18 @@ const char *cids_cascade_hmac[TEST_VECTOR_CNT] = {
     "5532"  // HMACwSHA384, ECDH with BP-P384,    MLKEM1024, CasKDF
 };
 const char *cids_cascade_kmac[TEST_VECTOR_CNT] = {
-    "7112", // KMAC128, ECDH with P256,       MLKEM512,  CasKDF
-    "7712", // KMAC128, ECDH with Curve25519, MLKEM512,  CasKDF
-    "7412", // KMAC128, ECDH with BP-P256,    MLKEM512,  CasKDF
-    "7122", // KMAC128, ECDH with P256,       MLKEM768,  CasKDF
-    "7722", // KMAC128, ECDH with Curve25519, MLKEM768,  CasKDF
-    "7422", // KMAC128, ECDH with BP-P256,    MLKEM768,  CasKDF
-    "8222", // KMAC256, ECDH with P384,       MLKEM768,  CasKDF
-    "8822", // KMAC256, ECDH with Curve448,   MLKEM768,  CasKDF
-    "8522", // KMAC256, ECDH with BP-P384,    MLKEM768,  CasKDF
-    "8232", // KMAC256, ECDH with P384,       MLKEM1024, CasKDF
-    "8832", // KMAC256, ECDH with Curve448,   MLKEM1024, CasKDF
-    "8532"  // KMAC256, ECDH with BP-P384,    MLKEM1024, CasKDF
+    "7112", // KMAC128, ECDH with P256,          MLKEM512,  CasKDF
+    "7712", // KMAC128, ECDH with Curve25519,    MLKEM512,  CasKDF
+    "7412", // KMAC128, ECDH with BP-P256,       MLKEM512,  CasKDF
+    "7122", // KMAC128, ECDH with P256,          MLKEM768,  CasKDF
+    "7722", // KMAC128, ECDH with Curve25519,    MLKEM768,  CasKDF
+    "7422", // KMAC128, ECDH with BP-P256,       MLKEM768,  CasKDF
+    "8222", // KMAC256, ECDH with P384,          MLKEM768,  CasKDF
+    "8822", // KMAC256, ECDH with Curve448,      MLKEM768,  CasKDF
+    "8522", // KMAC256, ECDH with BP-P384,       MLKEM768,  CasKDF
+    "8232", // KMAC256, ECDH with P384,          MLKEM1024, CasKDF
+    "8832", // KMAC256, ECDH with Curve448,      MLKEM1024, CasKDF
+    "8532"  // KMAC256, ECDH with BP-P384,       MLKEM1024, CasKDF
 };
 
 const EVP_MD *(*evp_hash[TEST_VECTOR_CNT])(void) = {

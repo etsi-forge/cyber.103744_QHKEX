@@ -208,3 +208,215 @@ int test_qhkex_derand_mlkem(const char * alg_name, uint8_t *pubA, size_t *PA2len
         }
     return rval;
 }
+
+int test_qhkex_rand_ecdh(int curve, uint8_t *pubA, size_t *PA1length, uint8_t *pubB, size_t *PB1length, uint8_t *ss, uint32_t *ss_len)
+{
+    int             rval    = FAILURE;
+    EVP_PKEY_CTX    *ctxA = NULL, *ctxB = NULL;
+    EVP_PKEY        *pkeyA = NULL, *pkeyB = NULL;
+    uint8_t         ssB[MAX_KEY_BYTE_LEN];
+    size_t          secret_lenA = 0, secret_lenB = 0;
+    size_t          pubA_len = 0, pubB_len = 0;
+
+    do {
+        // Create entity A keys
+        if (curve == EVP_PKEY_X25519 || curve == EVP_PKEY_X448) {
+            if (!(ctxA = EVP_PKEY_CTX_new_id(curve, NULL))) {
+                break;
+            }
+        } else {
+            if (!(ctxA = EVP_PKEY_CTX_new_id(EVP_PKEY_EC, NULL))) {
+                break;
+            }
+        }
+        if (EVP_PKEY_keygen_init(ctxA) <= 0) {
+            break;
+        }
+        if (curve != EVP_PKEY_X25519 || curve != EVP_PKEY_X448) {
+            if (EVP_PKEY_CTX_set_ec_paramgen_curve_nid(ctxA, curve) <= 0) {
+                break;
+            }
+        }
+        if (EVP_PKEY_keygen(ctxA, &pkeyA) <= 0) {
+            break;
+        }
+        if (curve != EVP_PKEY_X25519 || curve != EVP_PKEY_X448) {
+            if (EVP_PKEY_get_octet_string_param(pkeyA, "pub", pubA, MAX_KEY_BYTE_LEN, &pubA_len) <=0 ) {
+                break;
+            }
+        } else {
+            if (EVP_PKEY_get_raw_public_key(pkeyA, pubA, &pubA_len) <= 0) {
+                break;
+            }
+        }
+        *PA1length = pubA_len;
+
+        // Create entity B keys
+        if (curve == EVP_PKEY_X25519 || curve == EVP_PKEY_X448) {
+            if (!(ctxB = EVP_PKEY_CTX_new_id(curve, NULL))) {
+                break;
+            }
+        } else {
+            if (!(ctxB = EVP_PKEY_CTX_new_id(EVP_PKEY_EC, NULL))) {
+                break;
+            }
+        }
+        if (EVP_PKEY_keygen_init(ctxB) <= 0) {
+            break;
+        }
+        if (EVP_PKEY_CTX_set_ec_paramgen_curve_nid(ctxB, curve) <= 0) {
+            break;
+        }
+        if (EVP_PKEY_keygen(ctxB, &pkeyB) <= 0) {
+            break;
+        }
+        if (curve != EVP_PKEY_X25519 || curve != EVP_PKEY_X448) {
+            if (EVP_PKEY_get_octet_string_param(pkeyB, "pub", pubB, MAX_KEY_BYTE_LEN, &pubB_len) <= 0) {
+                break;
+            }
+        } else {
+        if (EVP_PKEY_get_raw_public_key(pkeyB, pubB, &pubB_len) <= 0) {
+                break;
+            }
+        }
+        *PB1length = pubB_len;
+
+        // Derive entity A shared secret
+        ctxA = EVP_PKEY_CTX_new(pkeyA, NULL);
+        if (!ctxA) {
+            break;
+        }
+        if (EVP_PKEY_derive_init(ctxA) <= 0) {
+             break;
+        }
+        if (EVP_PKEY_derive_set_peer(ctxA, pkeyB) <= 0) {
+             break;
+        }
+        if (EVP_PKEY_derive(ctxA, NULL, &secret_lenA) <= 0) {
+             break;
+        }
+        if (EVP_PKEY_derive(ctxA, ss, &secret_lenA) <= 0) {
+             break;
+        }
+
+        // Derive entity B shared secret
+        ctxB = EVP_PKEY_CTX_new(pkeyB, NULL);
+        if (!ctxB) {
+            break;
+        }
+        if (EVP_PKEY_derive_init(ctxB) <= 0) {
+            break;
+        }
+        if (EVP_PKEY_derive_set_peer(ctxB, pkeyA) <= 0) {
+            break;
+        }
+        if (EVP_PKEY_derive(ctxB, NULL, &secret_lenB) <= 0) {
+            break;
+        }
+        if (EVP_PKEY_derive(ctxB, ssB, &secret_lenB) <= 0) {
+            break;
+        }
+        // Check if entities shared secrets match
+        if (memcmp(ss, ssB, secret_lenB) != 0 || (secret_lenA != secret_lenB)) {
+            break;
+        }
+        *ss_len = secret_lenA;
+        rval     = SUCCESS;
+    } while (0);
+    if (ctxA) {
+        EVP_PKEY_CTX_free(ctxA);
+    }
+    if (ctxB) {
+        EVP_PKEY_CTX_free(ctxB);
+    }
+    if (pkeyA) {
+        EVP_PKEY_free(pkeyA);
+    }
+    if (pkeyB) {
+        EVP_PKEY_free(pkeyB);
+    }
+    return rval;
+}
+
+int test_qhkex_rand_mlkem(const char * kem, uint8_t *pubA, size_t *PA2length, uint8_t *ctB, size_t *CTB2length, uint8_t *ss, uint32_t *ss_len)
+{
+    int           rval = FAILURE;
+    size_t        pubA_len = OQS_KEM_ml_kem_1024_length_public_key; 
+    size_t        ss_out_len = OQS_KEM_ml_kem_1024_length_shared_secret;
+    size_t        ciphertext_len = OQS_KEM_ml_kem_1024_length_ciphertext;
+    uint8_t          shared_secretB[OQS_KEM_ml_kem_1024_length_shared_secret];
+    EVP_PKEY_CTX  *pkey_ctx = NULL, *encaps_ctx = NULL, *decaps_ctx = NULL;
+    EVP_PKEY      *keypair = NULL;
+    OSSL_PROVIDER *oqs_provider = NULL;
+    OSSL_LIB_CTX  *libctx = NULL;
+
+    do {
+        if (!(libctx = OSSL_LIB_CTX_new())) {
+            break;
+        }
+        if (!(oqs_provider = OSSL_PROVIDER_load(libctx, "oqsprovider"))) {
+            break;
+        }
+        if (!(pkey_ctx = EVP_PKEY_CTX_new_from_name(libctx, kem, NULL))) {
+            break;
+        }
+        if (EVP_PKEY_keygen_init(pkey_ctx) <= 0) {
+            break;
+        }
+        if (EVP_PKEY_keygen(pkey_ctx, &keypair) <= 0) {
+            break;
+        }
+        if (EVP_PKEY_get_octet_string_param(keypair, "pub", pubA, OQS_KEM_ml_kem_1024_length_public_key, &pubA_len) <= 0) {
+            break;
+        }
+        *PA2length = pubA_len;
+
+        if (!(encaps_ctx = EVP_PKEY_CTX_new(keypair, NULL))) {
+            break;
+        }
+        if (EVP_PKEY_encapsulate_init(encaps_ctx, NULL) <= 0) {
+            break;
+        }
+        if (EVP_PKEY_encapsulate(encaps_ctx, NULL, &ciphertext_len, NULL, &ss_out_len) <= 0) {
+            break;
+        }
+        *CTB2length = ciphertext_len;
+
+        if (EVP_PKEY_encapsulate(encaps_ctx, ctB, &ciphertext_len, ss, &ss_out_len) <= 0) {
+            break;
+        }
+        if (!(decaps_ctx = EVP_PKEY_CTX_new(keypair, NULL))) {
+            break;
+        }
+        if (EVP_PKEY_decapsulate_init(decaps_ctx, NULL) <= 0) {
+            break;
+        }
+        if (EVP_PKEY_decapsulate(decaps_ctx, shared_secretB, &ss_out_len, ctB, ciphertext_len) <= 0) {
+            break;
+        }
+        if (memcmp(ss, shared_secretB, ss_out_len) != 0) {
+            break;
+        }
+        *ss_len = ss_out_len;
+        rval     = SUCCESS;
+    } while (0);
+    if (pkey_ctx) {
+        EVP_PKEY_CTX_free(pkey_ctx);
+    }
+    if (encaps_ctx) {
+        EVP_PKEY_CTX_free(encaps_ctx);
+    }
+    if (decaps_ctx) {
+        EVP_PKEY_CTX_free(decaps_ctx);  
+    }
+    if (keypair) {
+        EVP_PKEY_free(keypair);
+    }
+    if (oqs_provider) {
+        OSSL_PROVIDER_unload(oqs_provider);
+    }
+    if (libctx) {
+        OSSL_LIB_CTX_free(libctx);
+    }
+    return rval;
+}

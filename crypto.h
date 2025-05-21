@@ -32,4 +32,8 @@ int test_qhkex_derand_ecdh(const int curve, const char *priv_dataA, const char *
                         uint8_t *ss, uint32_t *ss_len);
 int test_qhkex_derand_mlkem(const char * alg_name, uint8_t *pubA, size_t *PA2length, 
                         uint8_t *ctB, size_t *CTB2length, uint8_t *ss, uint32_t *ss_len);
+int test_qhkex_rand_ecdh(int curve, uint8_t *pubA, size_t *PA1length, 
+                        uint8_t *pubB, size_t *PB1length, uint8_t *ss, uint32_t *ss_len);
+int test_qhkex_rand_mlkem(const char * kem, uint8_t *pubA, size_t *PA2length, 
+                        uint8_t *ctB, size_t *CTB2length, uint8_t *ss, uint32_t *ss_len);
 #endif /*_QS_H_CRYPTO_KEX_H_*/

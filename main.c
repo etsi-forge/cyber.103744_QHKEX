@@ -2778,6 +2778,720 @@ int test_hkex_cascade_kmac_derand()
     return SUCCESS;
 }
 
+/* Testing harness for concatenation KDF (HKDF) with randomized ECC and PQ algorithms */
+int test_hkex_concatenate_hkdf_rand()
+{
+    uint8_t       PA_ECC[MAX_KEY_BYTE_LEN], PB_ECC[MAX_KEY_BYTE_LEN];
+    uint8_t       PA_PQ[MAX_MSG_BYTE_LEN],  CTB_PQ[MAX_MSG_BYTE_LEN];
+    size_t        length;
+    size_t        PA_ECC_length, PB_ECC_length, PA_PQ_length, CTB_PQ_length;
+    uint8_t       k1[MAX_KEY_BYTE_LEN], k2[MAX_KEY_BYTE_LEN];
+    uint8_t       key_material[MAX_KEY_BYTE_LEN];
+    uint8_t       MA[MAX_MSG_BYTE_LEN], MB[MAX_MSG_BYTE_LEN];
+    uint8_t       label[MAX_LABEL_BYTE_LEN], labelA[MAX_LABEL_BYTE_LEN], labelB[MAX_LABEL_BYTE_LEN];
+    uint32_t      alength, blength, llengthA, llengthB, klength, k1length, k2length, r;
+    const EVP_MD *md_type;
+
+    for (r = 0; r < TEST_VECTOR_CNT; r++) {
+        md_type = (*evp_hash[r])();
+
+        printf("\nRandomized CatKDF as HKDF/HMAC with %s, ECDH with %s, and %s \n\n", EVP_MD_name(md_type), OBJ_nid2sn(curves[r]), kems[r]);
+        printf("CID %s \n", cids_concatenate_hkdf[r]);
+
+        if (test_qhkex_rand_ecdh(curves[r], PA_ECC, &PA_ECC_length, PB_ECC, &PB_ECC_length, k1, &k1length)) {
+            return FAILURE;
+        }
+
+        if (test_qhkex_rand_mlkem(kems[r], PA_PQ, &PA_PQ_length, CTB_PQ, &CTB_PQ_length, k2, &k2length)) {
+            return FAILURE;
+        }
+
+        /* MA = cid || len(LA1) || LA1 || len(PA1) || PA1 || len(PA2) || PA2
+            NOTE: for test vector purposes ONLY not a suggested message format
+        */
+        alength = sizeof(MA);
+        message_formatting_function(MA, &alength, 2, cids_concatenate_hkdf[r], strLA1[r]);
+        length = htonl(PA_ECC_length*2);
+        my_memcpy(MA + alength, &length, sizeof(uint32_t));
+        alength += sizeof(uint32_t);
+        my_memcpy(MA + alength, PA_ECC, PA_ECC_length);
+        alength += PA_ECC_length;
+        length = htonl(PA_PQ_length*2);
+        my_memcpy(MA + alength, &length, sizeof(uint32_t));
+        alength += sizeof(uint32_t);
+        my_memcpy(MA + alength, PA_PQ, PA_PQ_length);
+        alength += PA_PQ_length;
+
+        /* MB = cid || len(LB1) || LB1 || len(PB1) || PB1 || len(PB2) || PB2
+            NOTE: for test vector purposes ONLY not a suggested message format
+        */
+        blength = sizeof(MB);
+        message_formatting_function(MB, &blength, 2, cids_concatenate_hkdf[r], strLB1[r]);
+        length = htonl(PB_ECC_length*2);
+        my_memcpy(MB + blength, &length, sizeof(uint32_t));
+        blength += sizeof(uint32_t);
+        my_memcpy(MB + blength, PB_ECC, PB_ECC_length);
+        blength += PB_ECC_length;
+        length = htonl(CTB_PQ_length*2);
+        my_memcpy(MB + blength, &length, sizeof(uint32_t));
+        blength += sizeof(uint32_t);
+        my_memcpy(MB + blength, CTB_PQ, CTB_PQ_length);
+        blength += CTB_PQ_length;
+
+        /* label = LA ^ LB */
+        llengthA = sizeof(labelA);
+        ascii_hex_strings_to_uint8(labelA, &llengthA, 1, strLA1[r]);
+        llengthB = sizeof(labelB);
+        ascii_hex_strings_to_uint8(labelB, &llengthB, 1, strLB1[r]);
+        if (llengthA != llengthB) {
+            return FAILURE;
+        }
+        for (int i = 0; i < llengthA; i++) {
+             label[i] = labelA[i] ^ labelB[i];
+        }
+
+        klength = key_length[r];
+        if (hkex_concat_hkdf(md_type, key_material, klength, NULL, 0, k1, k1length, k2, k2length, MA, alength, MB,
+                        blength, (uint8_t *)INFO_TEST_VECTOR,
+                        (uint32_t)strlen(INFO_TEST_VECTOR), label, llengthA)) {
+            return FAILURE;
+        }
+        printf("LA = %s\n", strLA1[r]);
+        print_array("PA1 = ", PA_ECC , PA_ECC_length);
+        print_array("PA2 = ", PA_PQ, PA_PQ_length);
+        printf("LB = %s\n", strLB1[r]);
+        print_array("PB1 = ", PB_ECC, PB_ECC_length);
+        print_array("PB2 = ", CTB_PQ, CTB_PQ_length);
+        print_array("k1 = ", k1, k1length);
+        print_array("k2 = ", k2, k2length);
+        printf("info = \"%s\"\n", INFO_TEST_VECTOR);
+        print_array("label = LA ^ LB = ", label, llengthA);
+        printf("MA = cid || len(LA)|| LA || len(PA1) || PA1 || len(PA2) || PA2\n");
+        printf("MB = cid || len(LB)|| LB || len(PB1) || PB1 || len(PB2) || PB2\n\n");
+
+        print_array("key material = ", key_material, klength);
+    }
+    return SUCCESS;
+}
+/* Testing harness for concatenation KDF (HMAC) with randomized ECC and PQ algorithms */
+int test_hkex_concatenate_hmac_rand()
+{
+    uint8_t       PA_ECC[MAX_KEY_BYTE_LEN], PB_ECC[MAX_KEY_BYTE_LEN];
+    uint8_t       PA_PQ[MAX_MSG_BYTE_LEN],  CTB_PQ[MAX_MSG_BYTE_LEN];
+    size_t        length;
+    size_t        PA_ECC_length, PB_ECC_length, PA_PQ_length, CTB_PQ_length;
+    uint8_t       k1[MAX_KEY_BYTE_LEN], k2[MAX_KEY_BYTE_LEN];
+    uint8_t       key_material[MAX_KEY_BYTE_LEN];
+    uint8_t       MA[MAX_MSG_BYTE_LEN], MB[MAX_MSG_BYTE_LEN];
+    uint8_t       label[MAX_LABEL_BYTE_LEN], labelA[MAX_LABEL_BYTE_LEN], labelB[MAX_LABEL_BYTE_LEN];
+    uint32_t      alength, blength, llengthA, llengthB, klength, k1length;
+    uint32_t      k2length, r;
+    const EVP_MD *md_type;
+
+    for (r = 0; r < TEST_VECTOR_CNT; r++) {
+        md_type = (*evp_hash[r])();
+
+        printf("\nRandomized CatKDF as HMAC with %s, ECDH with %s, and %s \n\n", EVP_MD_name(md_type), OBJ_nid2sn(curves[r]), kems[r]);
+        printf("CID %s \n", cids_concatenate_hmac[r]);
+
+        if (test_qhkex_rand_ecdh(curves[r], PA_ECC, &PA_ECC_length, PB_ECC, &PB_ECC_length, k1, &k1length)) {
+            return FAILURE;
+        }
+
+        if (test_qhkex_rand_mlkem(kems[r], PA_PQ, &PA_PQ_length, CTB_PQ, &CTB_PQ_length, k2, &k2length)) {
+            return FAILURE;
+        }
+
+        /* MA = cid || len(LA1) || LA1 || len(PA1) || PA1 || len(PA2) || PA2
+            NOTE: for test vector purposes ONLY not a suggested message format
+        */
+        alength = sizeof(MA);
+        message_formatting_function(MA, &alength, 2, cids_concatenate_hmac[r], strLA1[r]);
+        length = htonl(PA_ECC_length*2);
+        my_memcpy(MA + alength, &length, sizeof(uint32_t));
+        alength += sizeof(uint32_t);
+        my_memcpy(MA + alength, PA_ECC, PA_ECC_length);
+        alength += PA_ECC_length;
+        length = htonl(PA_PQ_length*2);
+        my_memcpy(MA + alength, &length, sizeof(uint32_t));
+        alength += sizeof(uint32_t);
+        my_memcpy(MA + alength, PA_PQ, PA_PQ_length);
+        alength += PA_PQ_length;
+        
+        /* MA = cid || len(LB1) || LB1 || len(PB1) || PB1 || len(PB2) || PB2
+            NOTE: for test vector purposes ONLY not a suggested message format
+        */
+        blength = sizeof(MB);
+        message_formatting_function(MB, &blength, 2, cids_concatenate_hmac[r], strLB1[r]);
+        length = htonl(PB_ECC_length*2);
+        my_memcpy(MB + blength, &length, sizeof(uint32_t));
+        blength += sizeof(uint32_t);
+        my_memcpy(MB + blength, PB_ECC, PB_ECC_length);
+        blength += PB_ECC_length;
+        length = htonl(CTB_PQ_length*2);
+        my_memcpy(MB + blength, &length, sizeof(uint32_t));
+        blength += sizeof(uint32_t);
+        my_memcpy(MB + blength, CTB_PQ, CTB_PQ_length);
+        blength += CTB_PQ_length;
+
+        /* label = LA ^ LB */
+        llengthA = sizeof(labelA);
+        ascii_hex_strings_to_uint8(labelA, &llengthA, 1, strLA1[r]);
+        llengthB = sizeof(labelB);
+        ascii_hex_strings_to_uint8(labelB, &llengthB, 1, strLB1[r]);
+        if (llengthA != llengthB) {
+            return FAILURE;
+        }
+        for (int i = 0; i < llengthA; i++) {
+             label[i] = labelA[i] ^ labelB[i];
+        }
+
+        klength = key_length[r];
+        if (hkex_concat_hmac(md_type, key_material, klength, NULL, 0, k1, k1length, k2, k2length, MA, alength, MB,
+                        blength, (uint8_t *)INFO_TEST_VECTOR,
+                        (uint32_t)strlen(INFO_TEST_VECTOR), label, llengthA)) {
+            return FAILURE;
+        }
+        printf("LA = %s\n", strLA1[r]);
+        print_array("PA1 = ", PA_ECC , PA_ECC_length);
+        print_array("PA2 = ", PA_PQ, PA_PQ_length);
+        printf("LB = %s\n", strLB1[r]);
+        print_array("PB1 = ", PB_ECC, PB_ECC_length);
+        print_array("PB2 = ", CTB_PQ, CTB_PQ_length);
+        print_array("k1 = ", k1, k1length);
+        print_array("k2 = ", k2, k2length);
+        printf("info = \"%s\"\n", INFO_TEST_VECTOR);
+        print_array("label = LA ^ LB = ", label, llengthA);
+        printf("MA = cid || len(LA)|| LA || len(PA1) || PA1 || len(PA2) || PA2\n");
+        printf("MB = cid || len(LB)|| LB || len(PB1) || PB1 || len(PB2) || PB2\n\n");
+
+        print_array("key material = ", key_material, klength);
+    }
+    return SUCCESS;
+}
+/* Testing harness for concatenation KDF (KMAC) with randomized ECC and PQ algorithms */
+int test_hkex_concatenate_kmac_rand()
+{
+    uint8_t       PA_ECC[MAX_KEY_BYTE_LEN], PB_ECC[MAX_KEY_BYTE_LEN];
+    uint8_t       PA_PQ[MAX_MSG_BYTE_LEN],  CTB_PQ[MAX_MSG_BYTE_LEN];
+    size_t        length;
+    size_t        PA_ECC_length, PB_ECC_length, PA_PQ_length, CTB_PQ_length;
+    uint8_t       k1[MAX_KEY_BYTE_LEN], k2[MAX_KEY_BYTE_LEN];
+    uint8_t       key_material[MAX_KEY_BYTE_LEN];
+    uint8_t       MA[MAX_MSG_BYTE_LEN], MB[MAX_MSG_BYTE_LEN];
+    uint8_t       label[MAX_LABEL_BYTE_LEN], labelA[MAX_LABEL_BYTE_LEN], labelB[MAX_LABEL_BYTE_LEN];
+    uint32_t      alength, blength, llengthA, llengthB, klength, k1length;
+    uint32_t      k2length, r;
+
+    for (r = 0; r < TEST_VECTOR_CNT; r++) {
+        printf("\nRandomized CatKDF as %s, ECDH with %s, and %s \n\n", kmac[r], OBJ_nid2sn(curves[r]), kems[r]);
+        printf("CID %s \n", cids_concatenate_kmac[r]);
+
+        if (test_qhkex_rand_ecdh(curves[r], PA_ECC, &PA_ECC_length, PB_ECC, &PB_ECC_length, k1, &k1length)) {
+            return FAILURE;
+        }
+        if (test_qhkex_rand_mlkem(kems[r], PA_PQ, &PA_PQ_length, CTB_PQ, &CTB_PQ_length, k2, &k2length)) {
+            return FAILURE;
+        }
+
+        /* MA = cid || len(LA1) || LA1 || len(PA1) || PA1 || len(PA2) || PA2
+            NOTE: for test vector purposes ONLY not a suggested message format
+        */
+        alength = sizeof(MA);
+        message_formatting_function(MA, &alength, 2, cids_concatenate_kmac[r], strLA1[r]);
+        length = htonl(PA_ECC_length*2);
+        my_memcpy(MA + alength, &length, sizeof(uint32_t));
+        alength += sizeof(uint32_t);
+        my_memcpy(MA + alength, PA_ECC, PA_ECC_length);
+        alength += PA_ECC_length;
+        length = htonl(PA_PQ_length*2);
+        my_memcpy(MA + alength, &length, sizeof(uint32_t));
+        alength += sizeof(uint32_t);
+        my_memcpy(MA + alength, PA_PQ, PA_PQ_length);
+        alength += PA_PQ_length;
+        
+        /* MA = cid || len(LB1) || LB1 || len(PB1) || PB1 || len(PB2) || PB2
+            NOTE: for test vector purposes ONLY not a suggested message format
+        */
+        blength = sizeof(MB);
+        message_formatting_function(MB, &blength, 2, cids_concatenate_kmac[r], strLB1[r]);
+        length = htonl(PB_ECC_length*2);
+        my_memcpy(MB + blength, &length, sizeof(uint32_t));
+        blength += sizeof(uint32_t);
+        my_memcpy(MB + blength, PB_ECC, PB_ECC_length);
+        blength += PB_ECC_length;
+        length = htonl(CTB_PQ_length*2);
+        my_memcpy(MB + blength, &length, sizeof(uint32_t));
+        blength += sizeof(uint32_t);
+        my_memcpy(MB + blength, CTB_PQ, CTB_PQ_length);
+        blength += CTB_PQ_length;
+
+        /* label = LA ^ LB */
+        llengthA = sizeof(labelA);
+        ascii_hex_strings_to_uint8(labelA, &llengthA, 1, strLA1[r]);
+        llengthB = sizeof(labelB);
+        ascii_hex_strings_to_uint8(labelB, &llengthB, 1, strLB1[r]);
+        if (llengthA != llengthB) {
+            return FAILURE;
+        }
+        for (int i = 0; i < llengthA; i++) {
+             label[i] = labelA[i] ^ labelB[i];
+        }
+
+        klength = key_length[r];
+        if (hkex_concat_kmac(kmac[r], key_material, klength, NULL, 0, k1, k1length, k2, k2length, MA, alength, MB,
+                        blength, (uint8_t *)INFO_TEST_VECTOR,
+                        (uint32_t)strlen(INFO_TEST_VECTOR), label, llengthA)) {
+            return FAILURE;
+        }
+        printf("LA = %s\n", strLA1[r]);
+        print_array("PA1 = ", PA_ECC , PA_ECC_length);
+        print_array("PA2 = ", PA_PQ, PA_PQ_length);
+        printf("LB = %s\n", strLB1[r]);
+        print_array("PB1 = ", PB_ECC, PB_ECC_length);
+        print_array("PB2 = ", CTB_PQ, CTB_PQ_length);
+        print_array("k1 = ", k1, k1length);
+        print_array("k2 = ", k2, k2length);
+        printf("info = \"%s\"\n", INFO_TEST_VECTOR);
+        print_array("label = LA ^ LB = ", label, llengthA);
+        printf("MA = cid || len(LA)|| LA || len(PA1) || PA1 || len(PA2) || PA2\n");
+        printf("MB = cid || len(LB)|| LB || len(PB1) || PB1 || len(PB2) || PB2\n\n");
+
+        print_array("key material = ", key_material, klength);
+    }
+    return SUCCESS;
+}
+
+/* Testing harness for the cascade KDF (HKDF) with randomized ECC and PQ algorithms */
+int test_hkex_cascade_hkdf_rand()
+{
+    uint8_t       PA_ECC[MAX_KEY_BYTE_LEN], PB_ECC[MAX_KEY_BYTE_LEN];
+    uint8_t       PA_PQ[MAX_MSG_BYTE_LEN],  CTB_PQ[MAX_MSG_BYTE_LEN];
+    size_t        length;
+    size_t        PA_ECC_length, PB_ECC_length, PA_PQ_length, CTB_PQ_length;
+    uint8_t       k1[MAX_KEY_BYTE_LEN], k2[MAX_KEY_BYTE_LEN];
+    uint8_t       round_secret[MAX_KEY_BYTE_LEN];
+    uint8_t       MA[MAX_MSG_BYTE_LEN], MB[MAX_MSG_BYTE_LEN];
+    uint8_t       label[MAX_LABEL_BYTE_LEN], labelA[MAX_LABEL_BYTE_LEN], labelB[MAX_LABEL_BYTE_LEN];
+    uint8_t       chain_secret1[MAX_KEY_BYTE_LEN], chain_secret2[MAX_KEY_BYTE_LEN];
+    uint32_t      alength, blength, llengthA, llengthB, clength, rlength;
+    uint32_t      k1length, k2length, r;
+    const EVP_MD *md_type;
+
+    for (r = 0; r < TEST_VECTOR_CNT; r++) {
+        md_type = (*evp_hash[r])();
+
+        printf("\nRandomized CasKDF as HKDF with %s, ECDH with %s, and %s \n\n", EVP_MD_name(md_type), OBJ_nid2sn(curves[r]), kems[r]);
+        printf("CID %s \n", cids_cascade_hkdf[r]);
+
+        if (test_qhkex_rand_ecdh(curves[r], PA_ECC, &PA_ECC_length, PB_ECC, &PB_ECC_length, k1, &k1length)) {
+            return FAILURE;
+        }
+
+        if (test_qhkex_rand_mlkem(kems[r], PA_PQ, &PA_PQ_length, CTB_PQ, &CTB_PQ_length, k2, &k2length)) {
+            return FAILURE;
+        }
+
+         /* MA = cid || len(LA1) || LA1 || len(PA1) || PA1
+            NOTE: for test vector purposes ONLY not a suggested message format
+        */
+        alength = sizeof(MA);
+        message_formatting_function(MA, &alength, 2, cids_cascade_hkdf[r], strLA1[r]);
+        length = htonl(PA_ECC_length*2);
+        my_memcpy(MA + alength, &length, sizeof(uint32_t));
+        alength += sizeof(uint32_t);
+        my_memcpy(MA + alength, PA_ECC, PA_ECC_length);
+        alength += PA_ECC_length;
+        
+        /* MB = cid || len(LB1) || LB1 || len(PB1) || PB1
+            NOTE: for test vector purposes ONLY not a suggested message format
+        */
+        blength = sizeof(MB);
+        message_formatting_function(MB, &blength, 2, cids_cascade_hkdf[r], strLB1[r]);
+        length = htonl(PB_ECC_length*2);
+        my_memcpy(MB + blength, &length, sizeof(uint32_t));
+        blength += sizeof(uint32_t);
+        my_memcpy(MB + blength, PB_ECC, PB_ECC_length);
+        blength += PB_ECC_length;
+
+        /* label = LA1 ^ LB1 */
+        llengthA = sizeof(labelA);
+        ascii_hex_strings_to_uint8(labelA, &llengthA, 1, strLA1[r]);
+        llengthB = sizeof(labelB);
+        ascii_hex_strings_to_uint8(labelB, &llengthB, 1, strLB1[r]);
+        if (llengthA != llengthB) {
+            return FAILURE;
+        }
+        for (int i = 0; i < llengthA; i++) {
+             label[i] = labelA[i] ^ labelB[i];
+        }
+
+        rlength = key_length[r];
+        clength = EVP_MD_size(md_type);
+        const uint8_t chain_secret0[] = {}; // OpenSSL3.x does not allow NULL pointer HMAC input
+        if (hkex_cascade_hkdf(md_type, chain_secret1, clength, round_secret, rlength, chain_secret0, 0, k1, k1length, MA, alength,
+                            MB, blength, (uint8_t *)INFO_TEST_VECTOR,
+                            (uint32_t)strlen(INFO_TEST_VECTOR), label, llengthA)) {
+            return FAILURE;
+        }
+
+        printf("LA1 = %s\n", strLA1[r]);
+        print_array("PA1 = ", PA_ECC, PA_ECC_length);
+        printf("LB1 = %s\n", strLB1[r]);
+        print_array("PB1 = ", PB_ECC, PB_ECC_length);
+        printf("previous_chain_secret = psk = <NULL>\n");
+        print_array("k1 = ", k1, k1length);
+        printf("info1 = \"%s\"\n", INFO_TEST_VECTOR);
+        printf("label1 = LA1 ^ LB1\n");
+        printf("MA1 = cid || len(LA1) || LA1 || len(PA1) || PA1\n");
+        printf("MB1 = cid || len(LB1) || LB1 || len(PB1) || PB1\n");
+
+        print_array("chain_secret1 = ", chain_secret1, clength);
+        print_array("key_material1 = ", round_secret, rlength);
+
+        /* MA = cid || len(LA2) || LA2 || len(PA2) || PA2
+            NOTE: for test vector purposes ONLY not a suggested message format
+        */
+        alength = sizeof(MA);
+        message_formatting_function(MA, &alength, 2, cids_cascade_hkdf[r], strLA2[r]);
+        length = htonl(PA_PQ_length*2);
+        my_memcpy(MA + alength, &length, sizeof(uint32_t));
+        alength += sizeof(uint32_t);
+        my_memcpy(MA + alength, PA_PQ, PA_PQ_length);
+        alength += PA_PQ_length;
+
+        /* MB = cid || len(LB2) || LB2 || len(PB2) || PB2
+            NOTE: for test vector purposes ONLY not a suggested message format
+        */
+        blength = sizeof(MB);
+        message_formatting_function(MB, &blength, 2, cids_cascade_hkdf[r], strLB2[r]);
+        length = htonl(CTB_PQ_length*2);
+        my_memcpy(MB + blength, &length, sizeof(uint32_t));
+        blength += sizeof(uint32_t);
+        my_memcpy(MB + blength, CTB_PQ, CTB_PQ_length);
+        blength += CTB_PQ_length;
+
+        /* label = LA2 ^ LB2 */
+        llengthA = sizeof(labelA);
+        ascii_hex_strings_to_uint8(labelA, &llengthA, 1, strLA2[r]);
+        llengthB = sizeof(labelB);
+        ascii_hex_strings_to_uint8(labelB, &llengthB, 1, strLB2[r]);
+        if (llengthA != llengthB) {
+            return FAILURE;
+        }
+        for (int i = 0; i < llengthA; i++) {
+             label[i] = labelA[i] ^ labelB[i];
+        }
+
+        if (hkex_cascade_hkdf(md_type, chain_secret2, clength, round_secret, rlength, chain_secret1, clength, k2,
+                            k2length, MA, alength, MB, blength, (uint8_t *)INFO_TEST_VECTOR,
+                            (uint32_t)strlen(INFO_TEST_VECTOR), label, llengthA)) {
+            return FAILURE;
+        }
+        printf("LA2 = %s\n", strLA2[r]);
+        print_array("PA2 = ", PA_PQ, PA_PQ_length);
+        printf("LB2 = %s\n", strLB2[r]);
+        print_array("PB2 = ", CTB_PQ, CTB_PQ_length);
+        print_array("previous_chain_secret = ", chain_secret1, clength);
+        print_array("k2 = ", k2, k2length);
+        printf("info2 = \"%s\"\n", INFO_TEST_VECTOR);
+        printf("label2 = LA2 ^ LB2\n");
+        printf("MA2 = cid || len(LA2) || LA2 || len(PA2) || PA2\n");
+        printf("MB2 = cid || len(LB2) || LB2 || len(PB2) || PB2\n\n");
+
+        print_array("chain_secret2 = ", chain_secret2, clength);
+        print_array("key_material2 = ", round_secret, rlength);
+    }
+    return SUCCESS;
+}
+/* Testing harness for the cascade KDF (HMAC) with randomized ECC and PQ algorithms */
+int test_hkex_cascade_hmac_rand()
+{
+    uint8_t       PA_ECC[MAX_KEY_BYTE_LEN], PB_ECC[MAX_KEY_BYTE_LEN];
+    uint8_t       PA_PQ[MAX_MSG_BYTE_LEN],  CTB_PQ[MAX_MSG_BYTE_LEN];
+    size_t        length;
+    size_t        PA_ECC_length, PB_ECC_length, PA_PQ_length, CTB_PQ_length;
+    uint8_t       k1[MAX_KEY_BYTE_LEN], k2[MAX_KEY_BYTE_LEN];
+    uint8_t       round_secret[MAX_KEY_BYTE_LEN];
+    uint8_t       MA[MAX_MSG_BYTE_LEN], MB[MAX_MSG_BYTE_LEN];
+    uint8_t       label[MAX_LABEL_BYTE_LEN], labelA[MAX_LABEL_BYTE_LEN], labelB[MAX_LABEL_BYTE_LEN];
+    uint8_t       chain_secret1[MAX_KEY_BYTE_LEN], chain_secret2[MAX_KEY_BYTE_LEN];
+    uint32_t      alength, blength, llengthA, llengthB, clength, rlength;
+    uint32_t      k1length, k2length, r;
+    const EVP_MD *md_type;
+
+    for (r = 0; r < TEST_VECTOR_CNT; r++) {
+        md_type = (*evp_hash[r])();
+
+        printf("\nRandomized CasKDF as HMAC/HMAC with %s, ECDH with %s, and %s \n\n", EVP_MD_name(md_type), OBJ_nid2sn(curves[r]), kems[r]);
+        printf("CID %s \n", cids_cascade_hmac[r]);
+
+        if (test_qhkex_rand_ecdh(curves[r], PA_ECC, &PA_ECC_length, PB_ECC, &PB_ECC_length, k1, &k1length)) {
+            return FAILURE;
+        }
+
+        if (test_qhkex_rand_mlkem(kems[r], PA_PQ, &PA_PQ_length, CTB_PQ, &CTB_PQ_length, k2, &k2length)) {
+            return FAILURE;
+        }
+
+        /* MA = cid || len(LA1) || LA1 || len(PA1) || PA1
+            NOTE: for test vector purposes ONLY not a suggested message format
+        */
+        alength = sizeof(MA);
+        message_formatting_function(MA, &alength, 2, cids_cascade_hmac[r], strLA1[r]);
+        length = htonl(PA_ECC_length*2);
+        my_memcpy(MA + alength, &length, sizeof(uint32_t));
+        alength += sizeof(uint32_t);
+        my_memcpy(MA + alength, PA_ECC, PA_ECC_length);
+        alength += PA_ECC_length;
+        
+        /* MB = cid || len(LB1) || LB1 || len(PB1) || PB1
+            NOTE: for test vector purposes ONLY not a suggested message format
+        */
+        blength = sizeof(MB);
+        message_formatting_function(MB, &blength, 2, cids_cascade_hmac[r], strLB1[r]);
+        length = htonl(PB_ECC_length*2);
+        my_memcpy(MB + blength, &length, sizeof(uint32_t));
+        blength += sizeof(uint32_t);
+        my_memcpy(MB + blength, PB_ECC, PB_ECC_length);
+        blength += PB_ECC_length;
+
+        /* label = LA1 ^ LB1 */
+        llengthA = sizeof(labelA);
+        ascii_hex_strings_to_uint8(labelA, &llengthA, 1, strLA1[r]);
+        llengthB = sizeof(labelB);
+        ascii_hex_strings_to_uint8(labelB, &llengthB, 1, strLB1[r]);
+        if (llengthA != llengthB) {
+            return FAILURE;
+        }
+        for (int i = 0; i < llengthA; i++) {
+             label[i] = labelA[i] ^ labelB[i];
+        }
+
+        rlength = key_length[r];
+        clength = EVP_MD_size(md_type);
+        const uint8_t chain_secret0[] = {}; // OpenSSL3.x does not allow NULL pointer HMAC input
+        if (hkex_cascade_hmac(md_type, chain_secret1, clength, round_secret, rlength, chain_secret0, 0, k1, k1length, MA, alength,
+                            MB, blength, (uint8_t *)INFO_TEST_VECTOR,
+                            (uint32_t)strlen(INFO_TEST_VECTOR), label, llengthA)) {
+            return FAILURE;
+        }
+
+        printf("LA1 = %s\n", strLA1[r]);
+        print_array("PA1 = ", PA_ECC, PA_ECC_length);
+        printf("LB1 = %s\n", strLB1[r]);
+        print_array("PB1 = ", PB_ECC, PB_ECC_length);
+        printf("previous_chain_secret = psk = <NULL>\n");
+        print_array("k1 = ", k1, k1length);
+        printf("info1 = \"%s\"\n", INFO_TEST_VECTOR);
+        printf("label1 = LA1 ^ LB1\n");
+        printf("MA1 = cid || len(LA1) || LA1 || len(PA1) || PA1\n");
+        printf("MB1 = cid || len(LB1) || LB1 || len(PB1) || PB1\n");
+
+        print_array("chain_secret1 = ", chain_secret1, clength);
+        print_array("key_material1 = ", round_secret, rlength);
+
+        /* MA = cid || len(LA2) || LA2 || len(PA2) || PA2
+            NOTE: for test vector purposes ONLY not a suggested message format
+        */
+        alength = sizeof(MA);
+        message_formatting_function(MA, &alength, 2, cids_cascade_hmac[r], strLA2[r]);
+        length = htonl(PA_PQ_length*2);
+        my_memcpy(MA + alength, &length, sizeof(uint32_t));
+        alength += sizeof(uint32_t);
+        my_memcpy(MA + alength, PA_PQ, PA_PQ_length);
+        alength += PA_PQ_length;
+        /* MB = cid || len(LB2) || LB2 || len(PB2) || PB2
+            NOTE: for test vector purposes ONLY not a suggested message format
+        */
+        blength = sizeof(MB);
+        message_formatting_function(MB, &blength, 2, cids_cascade_hmac[r], strLB2[r]);
+        length = htonl(CTB_PQ_length*2);
+        my_memcpy(MB + blength, &length, sizeof(uint32_t));
+        blength += sizeof(uint32_t);
+        my_memcpy(MB + blength, CTB_PQ, CTB_PQ_length);
+        blength += CTB_PQ_length;
+
+        /* label = LA2 ^ LB2 */
+        llengthA = sizeof(labelA);
+        ascii_hex_strings_to_uint8(labelA, &llengthA, 1, strLA2[r]);
+        llengthB = sizeof(labelB);
+        ascii_hex_strings_to_uint8(labelB, &llengthB, 1, strLB2[r]);
+        if (llengthA != llengthB) {
+            return FAILURE;
+        }
+        for (int i = 0; i < llengthA; i++) {
+             label[i] = labelA[i] ^ labelB[i];
+        }
+
+        if (hkex_cascade_hmac(md_type, chain_secret2, clength, round_secret, rlength, chain_secret1, clength, k2,
+                            k2length, MA, alength, MB, blength, (uint8_t *)INFO_TEST_VECTOR,
+                            (uint32_t)strlen(INFO_TEST_VECTOR), label, llengthA)) {
+            return FAILURE;
+        }
+        printf("LA2 = %s\n", strLA2[r]);
+        print_array("PA2 = ", PA_PQ, PA_PQ_length);
+        printf("LB2 = %s\n", strLB2[r]);
+        print_array("PB2 = ", CTB_PQ, CTB_PQ_length);
+        print_array("previous_chain_secret = ", chain_secret1, clength);
+        print_array("k2 = ", k2, k2length);
+        printf("info2 = \"%s\"\n", INFO_TEST_VECTOR);
+        printf("label2 = LA2 ^ LB2\n");
+        printf("MA2 = cid || len(LA2) || LA2 || len(PA2) || PA2\n");
+        printf("MB2 = cid || len(LB2) || LB2 || len(PB2) || PB2\n");
+
+        print_array("chain_secret2 = ", chain_secret2, clength);
+        print_array("key_material2 = ", round_secret, rlength);
+    }
+    return SUCCESS;
+}
+/* Testing harness for the cascade KDF (KMAC) with randomized ECC and PQ algorithms */
+int test_hkex_cascade_kmac_rand()
+{
+    uint8_t       PA_ECC[MAX_KEY_BYTE_LEN], PB_ECC[MAX_KEY_BYTE_LEN];
+    uint8_t       PA_PQ[MAX_MSG_BYTE_LEN],  CTB_PQ[MAX_MSG_BYTE_LEN];
+    size_t        length;
+    size_t        PA_ECC_length, PB_ECC_length, PA_PQ_length, CTB_PQ_length;
+    uint8_t       k1[MAX_KEY_BYTE_LEN], k2[MAX_KEY_BYTE_LEN];
+    uint8_t       round_secret[MAX_KEY_BYTE_LEN];
+    uint8_t       MA[MAX_MSG_BYTE_LEN], MB[MAX_MSG_BYTE_LEN];
+    uint8_t       label[MAX_LABEL_BYTE_LEN], labelA[MAX_LABEL_BYTE_LEN], labelB[MAX_LABEL_BYTE_LEN];
+    uint8_t       chain_secret0[MAX_KEY_BYTE_LEN], chain_secret1[MAX_KEY_BYTE_LEN], chain_secret2[MAX_KEY_BYTE_LEN];
+    uint32_t      alength, blength, llengthA, llengthB, cs0length, clength, rlength;
+    uint32_t      k1length, k2length, r;
+
+    for (r = 0; r < TEST_VECTOR_CNT; r++) {
+        printf("\nRandomized KDF as %s, ECDH with %s, and %s \n\n", kmac[r], OBJ_nid2sn(curves[r]), kems[r]);
+        printf("CID %s \n", cids_cascade_kmac[r]);
+        
+        if (test_qhkex_rand_ecdh(curves[r], PA_ECC, &PA_ECC_length, PB_ECC, &PB_ECC_length, k1, &k1length)) {
+            return FAILURE;
+        }
+
+        if (test_qhkex_rand_mlkem(kems[r], PA_PQ, &PA_PQ_length, CTB_PQ, &CTB_PQ_length, k2, &k2length)) {
+            return FAILURE;
+        }
+
+        /* MA = cid || len(LA1) || LA1 || len(PA1) || PA1
+            NOTE: for test vector purposes ONLY not a suggested message format
+        */
+        alength = sizeof(MA);
+        message_formatting_function(MA, &alength, 2, cids_cascade_kmac[r], strLA1[r]);
+        length = htonl(PA_ECC_length*2);
+        my_memcpy(MA + alength, &length, sizeof(uint32_t));
+        alength += sizeof(uint32_t);
+        my_memcpy(MA + alength, PA_ECC, PA_ECC_length);
+        alength += PA_ECC_length;
+        
+        /* MB = cid || len(LB1) || LB1 || len(PB1) || PB1
+            NOTE: for test vector purposes ONLY not a suggested message format
+        */
+        blength = sizeof(MB);
+        message_formatting_function(MB, &blength, 2, cids_cascade_kmac[r], strLB1[r]);
+        length = htonl(PB_ECC_length*2);
+        my_memcpy(MB + blength, &length, sizeof(uint32_t));
+        blength += sizeof(uint32_t);
+        my_memcpy(MB + blength, PB_ECC, PB_ECC_length);
+        blength += PB_ECC_length;
+
+        /* label = LA1 ^ LB1 */
+        llengthA = sizeof(labelA);
+        ascii_hex_strings_to_uint8(labelA, &llengthA, 1, strLA1[r]);
+        llengthB = sizeof(labelB);
+        ascii_hex_strings_to_uint8(labelB, &llengthB, 1, strLB1[r]);
+        if (llengthA != llengthB) {
+            return FAILURE;
+        }
+        for (int i = 0; i < llengthA; i++) {
+             label[i] = labelA[i] ^ labelB[i];
+        }
+
+        rlength = key_length[r];
+        clength = KMAC128_OUT_BYTE_LENGTH;
+        if (memcmp(kmac[r], SN_kmac256, strlen(SN_kmac256)) == 0) {
+            clength = KMAC256_OUT_BYTE_LENGTH;
+        }
+
+        // OpenSSL3.x does not allow KMAC secret length < 4B
+        cs0length = sizeof(strPSK);
+        ascii_hex_strings_to_uint8(chain_secret0, &cs0length, 1, strPSK);
+        cs0length = clength;
+        if (hkex_cascade_kmac(kmac[r], chain_secret1, clength, round_secret, rlength, chain_secret0, cs0length, k1, k1length, MA, alength,
+                            MB, blength, (uint8_t *)INFO_TEST_VECTOR,
+                            (uint32_t)strlen(INFO_TEST_VECTOR), label, llengthA)) {
+            return FAILURE;
+        }
+        printf("LA1 = %s\n", strLA1[r]);
+        print_array("PA1 = ", PA_ECC, PA_ECC_length);
+        printf("LB1 = %s\n", strLB1[r]);
+        print_array("PB1 = ", PB_ECC, PB_ECC_length);
+        printf("previous_chain_secret = psk = <NULL>\n");
+        print_array("k1 = ", k1, k1length);
+        printf("info1 = \"%s\"\n", INFO_TEST_VECTOR);
+        printf("label1 = LA1 ^ LB1\n");
+        printf("MA1 = cid || len(LA1) || LA1 || len(PA1) || PA1\n");
+        printf("MB1 = cid || len(LB1) || LB1 || len(PB1) || PB1\n");
+
+        print_array("chain_secret1 = ", chain_secret1, clength);
+        print_array("key_material1 = ", round_secret, rlength);
+
+        /* MA = cid || len(LA2) || LA2 || len(PA2) || PA2
+            NOTE: for test vector purposes ONLY not a suggested message format
+        */
+        alength = sizeof(MA);
+        message_formatting_function(MA, &alength, 2, cids_cascade_kmac[r], strLA2[r]);
+        length = htonl(PA_PQ_length*2);
+        my_memcpy(MA + alength, &length, sizeof(uint32_t));
+        alength += sizeof(uint32_t);
+        my_memcpy(MA + alength, PA_PQ, PA_PQ_length);
+        alength += PA_PQ_length;
+
+        /* MB = cid || len(LB2) || LB2 || len(PB2) || PB2
+            NOTE: for test vector purposes ONLY not a suggested message format
+        */
+        blength = sizeof(MB);
+        message_formatting_function(MB, &blength, 2, cids_cascade_kmac[r], strLB2[r]);
+        length = htonl(CTB_PQ_length*2);
+        my_memcpy(MB + blength, &length, sizeof(uint32_t));
+        blength += sizeof(uint32_t);
+        my_memcpy(MB + blength, CTB_PQ, CTB_PQ_length);
+        blength += CTB_PQ_length;
+
+        /* label = LA2 ^ LB2 */
+        llengthA = sizeof(labelA);
+        ascii_hex_strings_to_uint8(labelA, &llengthA, 1, strLA2[r]);
+        llengthB = sizeof(labelB);
+        ascii_hex_strings_to_uint8(labelB, &llengthB, 1, strLB2[r]);
+        if (llengthA != llengthB) {
+            return FAILURE;
+        }
+        for (int i = 0; i < llengthA; i++) {
+             label[i] = labelA[i] ^ labelB[i];
+        }
+
+        if (hkex_cascade_kmac(kmac[r], chain_secret2, clength, round_secret, rlength, chain_secret1, clength, k2,
+                            k2length, MA, alength, MB, blength, (uint8_t *)INFO_TEST_VECTOR,
+                            (uint32_t)strlen(INFO_TEST_VECTOR), label, llengthA)) {
+            return FAILURE;
+        }
+
+        printf("LA2 = %s\n", strLA2[r]);
+        print_array("PA2 = ", PA_PQ, PA_PQ_length);
+        printf("LB2 = %s\n", strLB2[r]);
+        print_array("PB2 = ", CTB_PQ, CTB_PQ_length);
+        print_array("previous_chain_secret = ", chain_secret1, clength);
+        print_array("k2 = ", k2, k2length);
+        printf("info2 = \"%s\"\n", INFO_TEST_VECTOR);
+        printf("label2 = LA2 ^ LB2\n");
+        printf("MA2 = cid || len(LA2) || LA2 || len(PA2) || PA2\n");
+        printf("MB2 = cid || len(LB2) || LB2 || len(PB2) || PB2\n");
+
+        print_array("chain_secret2 = ", chain_secret2, clength);
+        print_array("key_material2 = ", round_secret, rlength);
+    }
+    return SUCCESS;
+}
+
 int main(void)
 {
     if (test_hkex_concatenate_hkdf()) {
@@ -2818,6 +3532,28 @@ int main(void)
         return FAILURE;
     }
     if (test_hkex_cascade_kmac_derand()) {
+        return FAILURE;
+    }
+
+    //Randomized CatKDF
+    if (test_hkex_concatenate_hkdf_rand()) {
+        return FAILURE;
+    }
+    if (test_hkex_concatenate_hmac_rand()) {
+        return FAILURE;
+    }
+    if (test_hkex_concatenate_kmac_rand()) {
+        return FAILURE;
+    }
+
+    // Randomized CasKDF
+    if (test_hkex_cascade_hkdf_rand()) {
+        return FAILURE;
+    }
+    if (test_hkex_cascade_hmac_rand()) {
+        return FAILURE;
+    }
+    if (test_hkex_cascade_kmac_rand()) {
         return FAILURE;
     }
 

@@ -25,7 +25,7 @@ void *my_memcpy(void *dst, const void *src, size_t byte_len)
     }
     return memcpy(dst, src, byte_len);
 }
-/*  Implements the kdf concatenate-based formatting function, see Section 7.2.2                   */
+/*  Implements KDF concatenate-based formatting function, see Section 7.2.2                       */
 /*  Input:           const uint8_t * arg1, arg2, arg3                                             */
 /*  Input:           const uint32_t a1length, a2length, a3length                                  */
 /*  Output:          uint8_t *kdf_context, uint32_t *clength                                      */
@@ -62,7 +62,7 @@ int cb_f(uint8_t *kdf_context, uint32_t *clength, const uint8_t *arg1,
     } while (0);
     return rval;
 }
-/*  Implements the kdf concatenate-and-hash-based formatting function, see Section 7.2.3                */
+/*  Implements KDF concatenate-and-hash-based formatting function, see Section 7.2.3                    */
 /*  Input:           const uint8_t * arg1, arg2, arg3                                                   */
 /*  Input:           const uint32_t a1length, a2length, a3length                                        */
 /*  Input:           const EVP_MD *md_type                                                              */
@@ -121,12 +121,12 @@ int cahb_f(const EVP_MD *md_type, uint8_t *kdf_context, uint32_t *clength, const
     }
     return rval;
 }
-/*  Implements the HMAC KDF function from Section 7.4.2                                           */
+/*  Implements HKDF KDF function from Section 7.4.2                                               */
 /*  Input:           const EVP_MD *md_type                                                        */
 /*  Input:           const uint8_t *secret, *label, *context                                      */
 /*  Input:           const uint32_t slength, llength, clength                                     */
 /*  Output:          uint8_t *key_material, uint32_t *klength                                     */
-/*  Functionality:   key_material = HMAC(secret, label, context, length)                          */
+/*  Functionality:   key_material = HKDF(secret, label, context, length)                          */
 int kdf_hkdf(const EVP_MD *md_type, uint8_t *key_material, uint32_t *klength, const uint8_t *secret, const uint32_t slength,
     const uint8_t *label, const uint32_t llength, const uint8_t *context, const uint32_t clength)
 {
@@ -171,12 +171,12 @@ int kdf_hkdf(const EVP_MD *md_type, uint8_t *key_material, uint32_t *klength, co
     }
     return rval;
 }
-/*  Implements the HMAC KDF function from Section 7.4.2                                           */
+/*  Implements HMAC KDF function from Section 7.4.3                                               */
 /*  Input:           const EVP_MD *md_type                                                        */
 /*  Input:           const uint8_t *secret, *label, *context                                      */
 /*  Input:           const uint32_t slength, llength, clength                                     */
 /*  Output:          uint8_t *key_material, uint32_t *klength                                     */
-/*  Functionality:   key_material = HMAC(secret, label, context, length)                          */
+/*  Functionality:   key_material = HMAC(label, secret || context)                                */
 int kdf_hmac(const EVP_MD *md_type, uint8_t *key_material, uint32_t *klength, const uint8_t *secret, const uint32_t slength,
     const uint8_t *label, const uint32_t llength, const uint8_t *context, const uint32_t clength)
 {
@@ -220,12 +220,12 @@ int kdf_hmac(const EVP_MD *md_type, uint8_t *key_material, uint32_t *klength, co
     }
     return rval;
 }
-/*  Implements the KMAC KDF function from Section 7.4.3                                           */
+/*  Implements KMAC KDF function from Section 7.4.4                                               */
 /*  Input:           const char *kmac                                                             */
 /*  Input:           const uint8_t *secret, *label, *context                                      */
 /*  Input:           const uint32_t slength, llength, clength                                     */
 /*  Output:          uint8_t *key_material, uint32_t *klength                                     */
-/*  Functionality:   key_material = KMAC#(label, counter || secret || context, length, "KDF")     */
+/*  Functionality:   key_material = KMAC#(label, counter || secret || context, length * 8, "KDF") */
 /*  Functionality:   key_material = SSKDF_kmac(secret, label, context, length)                    */
 int kdf_kmac(const char *kmac, uint8_t *key_material, uint32_t *klength, const uint8_t *secret, const uint32_t slength,
     const uint8_t *label, const uint32_t llength, const uint8_t *context, const uint32_t clength)
@@ -268,7 +268,7 @@ int kdf_kmac(const char *kmac, uint8_t *key_material, uint32_t *klength, const u
     }
     return rval;
 }
-/*  Implements the HMAC prf function from Section 7.3.2                                   */
+/*  Implements HMAC PRF function from Section 7.3.2                                       */
 /*  Input:           const EVP_MD *md_type                                                */
 /*  Input:           const uint8_t *secret, *ki, *MAi, *MBi                               */
 /*  Input:           const uint8_t slength, const uint32_t kilength, mailength, mbilength */
@@ -330,7 +330,7 @@ int prf_hmac(const EVP_MD *md_type, uint8_t *output, uint32_t *olength, const ui
     }
     return rval;
 }
-/*  Implements the KMAC PRF function from Section 7.3.3                                   */
+/*  Implements KMAC PRF function from Section 7.3.3                                       */
 /*  Input:           const char *kmac                                                     */
 /*  Input:           const uint8_t *secret, *ki, *MAi, *MBi                               */
 /*  Input:           const uint8_t slength, const uint32_t kilength, mailength, mbilength */
@@ -388,9 +388,9 @@ int prf_kmac(const char *kmac, uint8_t *output, uint32_t *olength, const uint8_t
     }
     return rval;
 }
-/*  Implements the function Concatenation HKDF KDF from Section 8.2                                               */
+/*  Implements function CatKDF from Section 8.2 using HKDF KDF as described in Section 7.4.2                      */
 /*  Input:           const EVP_MD *md_type                                                                        */
-/*  Input:           uint8_t *psk, *k1, *k2, *MA, *MB, *info, *label                                           */
+/*  Input:           uint8_t *psk, *k1, *k2, *MA, *MB, *info, *label                                              */
 /*  Input:           const uint32_t klength, plength, k1length, k2length, malength, mblength, clength, llength    */
 /*  Output:          uint8_t *key_material                                                                        */
 int hkex_concat_hkdf(const EVP_MD *md_type, uint8_t *key_material, const uint32_t klength, const uint8_t *psk,
@@ -433,9 +433,9 @@ int hkex_concat_hkdf(const EVP_MD *md_type, uint8_t *key_material, const uint32_
     } while (0);
     return rval;
 }
-/*  Implements the function Concatenation HMAC KDF from Section 8.2                                               */
+/*  Implements function CatKDF from Section 8.2 using HMAC KDF as described in Section 7.4.3                      */
 /*  Input:           const EVP_MD *md_type                                                                        */
-/*  Input:           uint8_t *psk, *k1, *k2, *MA, *MB, *info, *label                                           */
+/*  Input:           uint8_t *psk, *k1, *k2, *MA, *MB, *info, *label                                              */
 /*  Input:           const uint32_t klength, plength, k1length, k2length, malength, mblength, clength, llength    */
 /*  Output:          uint8_t *key_material                                                                        */
 int hkex_concat_hmac(const EVP_MD *md_type, uint8_t *key_material, const uint32_t klength, const uint8_t *psk,
@@ -478,9 +478,9 @@ int hkex_concat_hmac(const EVP_MD *md_type, uint8_t *key_material, const uint32_
     } while (0);
     return rval;
 }
-/*  Implements the function Concatenation KMAC KDF from Section 8.2                                               */
+/*  Implements function CatKDF from Section 8.2 using KMAC KDF as described in Section 7.4.4                      */
 /*  Input:           const char *kmac                                                                             */
-/*  Input:           uint8_t *psk, *k1, *k2, *MA, *MB, *info, *label                                           */
+/*  Input:           uint8_t *psk, *k1, *k2, *MA, *MB, *info, *label                                              */
 /*  Input:           const uint32_t klength, plength, k1length, k2length, malength, mblength, ilength, llength    */
 /*  Output:          uint8_t *key_material                                                                        */
 int hkex_concat_kmac(const char *kmac, uint8_t *key_material, const uint32_t klength, const uint8_t *psk,
@@ -521,7 +521,7 @@ int hkex_concat_kmac(const char *kmac, uint8_t *key_material, const uint32_t kle
     } while (0);
     return rval;
 }
-/*  Implements the one round of the function Cascading HMAC KDF from Section 8.3                                        */
+/*  Implements function CasKDF from Section 8.3 using HKDF KDF and HMAC PRF as described in Sections 7.4.2 and 7.3.2    */
 /*  Input:           const EVP_MD *md_type                                                                              */
 /*  Input:           uint8_t *previous_chain_secret, *ki, *MAi, *MBi, infoi, *labeli                                    */
 /*  Input:           const uint32_t cslength, klength, pcslength, kilength, mailength, mbilength, iilength, lilength    */
@@ -572,7 +572,7 @@ int hkex_cascade_hkdf(const EVP_MD *md_type, uint8_t *chain_secret, const uint32
     } while (0);
     return rval;
 }
-/*  Implements the one round of the function Cascading HMAC KDF from Section 8.3                                        */
+/*  Implements function CasKDF from Section 8.3 using HMAC KDF and HMAC PRF as described in Sections 7.4.3 and 7.3.2    */
 /*  Input:           const EVP_MD *md_type                                                                              */
 /*  Input:           uint8_t *previous_chain_secret, *ki, *MAi, *MBi, infoi, *labeli                                    */
 /*  Input:           const uint32_t cslength, klength, pcslength, kilength, mailength, mbilength, iilength, lilength    */
@@ -623,7 +623,7 @@ int hkex_cascade_hmac(const EVP_MD *md_type, uint8_t *chain_secret, const uint32
     } while (0);
     return rval;
 }
-/*  Implements the function Cascade KMAC KDF from Section 8.3                                                           */
+/*  Implements function CasKDF from Section 8.3 using KMAC KDF and KMAC PRF as described in Sections 7.4.4 and 7.3.3    */
 /*  Input:           const char *kmac                                                                                   */
 /*  Input:           uint8_t *previous_chain_secret, *ki, *MAi, *MBi, infoi, *labeli                                    */
 /*  Input:           const uint32_t cslength, klength, pcslength, kilength, mailength, mbilength, iilength, lilength    */

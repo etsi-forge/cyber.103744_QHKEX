@@ -14,12 +14,21 @@
  This is not intended for production use.  It is intended to be a reference
  implementation for test vectors for the specification.
   
+  git clone ssh://git.amazon.com/pkg/Etsi-hkex-test
+  git checkout 
  ### Build instructions ###
  
-This library requires OpenSSL version 1.1.1d libcrypto.
+This library requires OpenSSL version 3.2.4-dev libcrypto.
  
-     gcc -Wall -o etsi-hkex-test main.c qshkex.c -lcrypto
-     ./etsi-hkex-test
+    To clone and build dependencies (openssl, liboqs, and oqs-provider), run:
+    make
+
+    To build and run etsi-hkex-test:
+    make run
+
+    Or:
+    gcc -Wall -o etsi-hkex-test main.c crypto.c qshkex.c -lcrypto -loqs
+    ./etsi-hkex-test
      
 ### License ###     
 The content of this repository and the files

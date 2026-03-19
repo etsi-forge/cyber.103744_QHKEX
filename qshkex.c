@@ -1,13 +1,13 @@
 /*
     This file implements ETSI TC CYBER QSC Quantum-safe Hybrid Key Exchanges
-    (Version 1.1.1)
+    (Version 1.2.1)
 
     This is not intended for production use.  It is intended to be a reference
     implementation for test vectors for the specification.
 
-    It uses OpenSSL version 1.1.1d libcrypto.
+    It uses OpenSSL version 3.2 libcrypto.
 
-    gcc -Wall -o etsi-hkex-test main.c qshkex.c -lcrypto
+    gcc -Wall -o etsi-hkex-test main.c crypto.c qshkex.c -lcrypto -loqs
     ./etsi-hkex-test
 
     Copyright 2020 ETSI. All rights reserved
@@ -213,10 +213,10 @@ int kdf_hmac(const EVP_MD *md_type, uint8_t *key_material, uint32_t *klength, co
         rval     = SUCCESS;
     } while (0);
     if (kdf) {
-            EVP_KDF_free(kdf);
+        EVP_KDF_free(kdf);
     }
     if (kctx) {
-            EVP_KDF_CTX_free(kctx);
+        EVP_KDF_CTX_free(kctx);
     }
     return rval;
 }
@@ -261,10 +261,10 @@ int kdf_kmac(const char *kmac, uint8_t *key_material, uint32_t *klength, const u
         rval     = SUCCESS;
     } while (0);
     if (kdf) {
-            EVP_KDF_free(kdf);
+        EVP_KDF_free(kdf);
     }
     if (kctx) {
-            EVP_KDF_CTX_free(kctx);
+        EVP_KDF_CTX_free(kctx);
     }
     return rval;
 }

@@ -1,13 +1,13 @@
 /*
     This file implements ETSI TC CYBER QSC Quantum-safe Hybrid Key Exchanges
-    (Version 1.1.1)
+    (Version 1.2.1)
 
     This is not intended for production use.  It is intended to be a reference
     implementation for test vectors for the specification.
 
-    It uses OpenSSL version 1.1.1d libcrypto.
+    It uses OpenSSL version 3.2 libcrypto.
 
-    gcc -Wall -o etsi-hkex-test main.c qshkex.c -lcrypto
+    gcc -Wall -o etsi-hkex-test main.c crypto.c qshkex.c -lcrypto -loqs
     ./etsi-hkex-test
 
     Copyright 2020 ETSI. All rights reserved
@@ -16,6 +16,7 @@
 
 #include "qshkex.h"
 #include "crypto.h"
+#include <stdlib.h>
 
 #define TEST_VECTOR_CNT             12
 #define INFO_TEST_VECTOR  "ETSI_QSHKE_TEST_VECTORS_V_1_2"
@@ -1341,7 +1342,7 @@ void ascii_hex_strings_to_uint8(uint8_t *array, uint32_t *alength, const uint32_
     va_list     args;
 
     if ((array == NULL) || (alength == NULL)) {
-        exit(0);
+        exit(EXIT_FAILURE);
     }
     ptr              = array;
     remaining_length = *alength;
@@ -1350,17 +1351,17 @@ void ascii_hex_strings_to_uint8(uint8_t *array, uint32_t *alength, const uint32_
     for (i = 0; i < scount; i++) {
         if ((pos = va_arg(args, const char *)) == NULL) {
             va_end(args);
-            exit(0);
+            exit(EXIT_FAILURE);
         }
         str_length = (uint32_t)strlen(pos);
         if (str_length % 2) {
             va_end(args);
-            exit(0);
+            exit(EXIT_FAILURE);
         }
         *alength = *alength + (str_length / 2);
         if (remaining_length < str_length / 2) {
             va_end(args);
-            exit(0);
+            exit(EXIT_FAILURE);
         }
         for (j = 0; j < str_length / 2; j++) {
             sscanf(pos, "%2hhx", ptr++);
@@ -1383,7 +1384,7 @@ void message_formatting_function(uint8_t *array, uint32_t *alength, const uint32
     va_list     args;
 
     if ((array == NULL) || (alength == NULL)) {
-        exit(0);
+        exit(EXIT_FAILURE);
     }
     ptr              = array;
     remaining_length = *alength;
@@ -1392,16 +1393,16 @@ void message_formatting_function(uint8_t *array, uint32_t *alength, const uint32
     for (i = 0; i < scount; i++) {
         if ((pos = va_arg(args, const char *)) == NULL) {
             va_end(args);
-            exit(0);
+            exit(EXIT_FAILURE);
         }
         str_length = (uint32_t)strlen(pos);
         if (str_length % 2) {
             va_end(args);
-            exit(0);
+            exit(EXIT_FAILURE);
         }
         if (remaining_length < str_length / 2) {
             va_end(args);
-            exit(0);
+            exit(EXIT_FAILURE);
         }
         if (i != 0){
             length = htonl(str_length);

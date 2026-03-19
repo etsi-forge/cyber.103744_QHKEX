@@ -1,6 +1,6 @@
 /*
     Header file for a reference implementation of
-    ETSI TC CYBER QSC Quantum-safe Hybrid Key Exchanges (Version 1.1.1)
+    ETSI TC CYBER QSC Quantum-safe Hybrid Key Exchanges (Version 1.2.1)
 
     This is not intended for production use.  It is intended to be a reference
     implementation for test vectors for the specification.

@@ -57,6 +57,7 @@ openssl:
 		cd openssl && \
 		./Configure \
 			--prefix=$(BUILD_DIR) \
+			--libdir=lib \
 			no-ssl no-tls1 no-tls1_1 no-afalgeng \
 			no-shared threads -lm && \
 		make && \

@@ -9,7 +9,7 @@ More information and standards download at the [work item page](https://portal.e
 ### Usage ###
 
 This code is provided as an informative implementation of the Quantum-safe Hybrid Key Exchanges for the Concatenate
-KDF (CatKDF) and Cascade KDF (CasKDF). It generates the test vectors contained in the TS.
+KDF (CatKDF) and Cascade KDF (CasKDF). It generates the test vectors for the TS.
 
 This is not intended for production use. It is intended to be a reference
 implementation for test vectors for the specification.

@@ -32,7 +32,6 @@ DEPS := openssl liboqs oqs-provider
 
 # Default target
 all: update install setup openssl liboqs oqs-provider test-oqs compile run
-# all: update install setup openssl liboqs oqs-provider test-oqs compile 
 
 
 # Update and install necessary packages (OS-specific)
@@ -57,10 +56,12 @@ openssl:
 		git clone -b openssl-3.2 https://github.com/openssl/openssl && \
 		cd openssl && \
 		./Configure \
- 			--prefix=$(BUILD_DIR) \
-  			no-ssl no-tls1 no-tls1_1 no-afalgeng \
-  			no-shared threads -lm && \
-        make && \
+			--prefix=$(BUILD_DIR) \
+			--libdir=lib \
+			no-ssl no-tls1 no-tls1_1 no-afalgeng \
+			no-shared threads -lm && \
+		make && \
+		make install_sw && \
 		echo "OpenSSL cloned and built successfully."; \
 	else \
 		echo "OpenSSL directory already exists. Skipping clone and build."; \
@@ -73,7 +74,7 @@ liboqs:
 		cd $(WORKSPACE) && \
 		git clone https://github.com/open-quantum-safe/liboqs  && \
 		cd liboqs  && \
-		git checkout 0.13.0-release && \
+		git checkout 0.13.0 && \
 		mkdir build && cd build  && \
 		cmake \
 			-DBUILD_SHARED_LIBS=ON \
@@ -81,8 +82,10 @@ liboqs:
 			-DCMAKE_BUILD_TYPE=Release \
 			-DOQS_BUILD_ONLY_LIB=ON \
 			-DOQS_DIST_BUILD=ON \
+			-DCMAKE_INSTALL_PREFIX=$(BUILD_DIR) \
 			..   && \
-		make  && \
+		make && \
+		make install && \
 		echo "liboqs cloned and built successfully."; \
 	else \
 		echo "liboqs directory already exists. Skipping clone and build."; \
@@ -95,13 +98,13 @@ oqs-provider:
 		cd $(WORKSPACE) && \
 		git clone https://github.com/open-quantum-safe/oqs-provider  && \
 		cd oqs-provider && \
-		git checkout 0.7.0-release && \
-		liboqs_DIR=$(BUILD_DIR) cmake \
-			-DOPENSSL_ROOT_DIR=$(WORKSPACE)/openssl/ \
+		git checkout 0.7.0 && \
+		liboqs_DIR=$(BUILD_DIR)/lib/cmake/liboqs cmake \
+			-DOPENSSL_ROOT_DIR=$(BUILD_DIR) \
 			-DCMAKE_BUILD_TYPE=Release \
 			-S . \
 			-B $(BUILD_DIR)  && \
-		sudo cmake --build $(BUILD_DIR) ; \
+		cmake --build $(BUILD_DIR) ; \
 		echo "oqs-provider cloned, built, and configured successfully."; \
 	else \
 		echo "oqs-provider directory already exists. Skipping clone and build."; \
@@ -115,9 +118,9 @@ test-oqs:
 # Compile the project
 compile:
 	@echo "Compiling the project..."
-	gcc -Wall -o etsi-hkex-test main.c crypto.c qshkex.c -lcrypto -loqs \
-		-I$(WORKSPACE)/liboqs/build/include/ \
-		-L$(BUILD_DIR)/lib
+	$(CC) $(CFLAGS) -o etsi-hkex-test main.c crypto.c qshkex.c $(LDFLAGS) \
+		-I$(BUILD_DIR)/include \
+		-L$(BUILD_DIR)/lib -L$(BUILD_DIR)/lib64
 	@echo "Compilation completed. Executable: etsi-hkex-test"
 
 
@@ -125,9 +128,9 @@ compile:
 run: compile
 	@echo "Running etsi-hkex-test..."
 ifeq ($(UNAME_S),Linux)
-	@export OPENSSL_MODULES=$(BUILD_DIR)/lib  && ./etsi-hkex-test
+	@LD_LIBRARY_PATH=$(BUILD_DIR)/lib:$(BUILD_DIR)/lib64 OPENSSL_MODULES=$(BUILD_DIR)/lib ./etsi-hkex-test
 else ifeq ($(UNAME_S),Darwin)
-	@DYLD_LIBRARY_PATH=$(BUILD_DIR)/lib:$$DYLD_LIBRARY_PATH ./etsi-hkex-test
+	@DYLD_LIBRARY_PATH=$(BUILD_DIR)/lib:$$DYLD_LIBRARY_PATH OPENSSL_MODULES=$(BUILD_DIR)/lib ./etsi-hkex-test
 endif
 
 # Clean up

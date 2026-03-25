@@ -1,13 +1,13 @@
 /*
     This file implements ETSI TC CYBER QSC Quantum-safe Hybrid Key Exchanges
-    (Version 1.1.1)
+    (Version 1.2.1)
 
     This is not intended for production use.  It is intended to be a reference
     implementation for test vectors for the specification.
 
-    It uses OpenSSL version 1.1.1d libcrypto.
+    It uses OpenSSL version 3.2 libcrypto.
 
-    gcc -Wall -o etsi-hkex-test main.c qshkex.c -lcrypto
+    gcc -Wall -o etsi-hkex-test main.c crypto.c qshkex.c -lcrypto -loqs
     ./etsi-hkex-test
 
     Copyright 2020 ETSI. All rights reserved
@@ -16,6 +16,7 @@
 
 #include "qshkex.h"
 #include "crypto.h"
+#include <stdlib.h>
 
 #define TEST_VECTOR_CNT             12
 #define INFO_TEST_VECTOR  "ETSI_QSHKE_TEST_VECTORS_V_1_2"
@@ -1226,85 +1227,85 @@ A90C4B24AB0DA526F289209ABCB1F05C86C7E4437A144C91E1C867",
 
 /*  Derived key_material  */
 const char *strkmcat_hkdf[] = {
-    "370705EB882B5629F955D01A5FFCA748",
-    "36C6BDE2BE72B35F3A51CA8EF72489E9",
-    "3DDF171F7569D9174DEDBD48893D328C",
-    "99B5DC7F166C3158043BC626DD0C4498",
-    "701675524E4986A391AFEFBB604AA63D",
-    "740CB65DD232C9D7804092733D2D7361",
-    "9E721A4AC9E7BB18562920725032BCA75947882E9E96D418",
-    "C3C3D576335BF6D31522B3A72A00765981CE67B99FCBE85D",
-    "833A314FE8BD6326B5B1FD51DD4CBA2ACE5C5F80C9B8D544",
-    "C65CD95DE189F21CD5726B2D595919461FCF3238DA50D538",
-    "C2B0B1967FC9C3A75B1D77F32B19EDEE39CBE94796A13536",
-    "B1E57722B3FB93C71EFCA4C8826C6C5C8BD491827B70A613"};
+    "54D564540FA45A8D520E3980579E0B44",
+    "AA7A8FF1C0C1EB299AE7885529EC4DFB",
+    "142043DDA9BB952F767C43D3DBC06C9F",
+    "8109982E98D11BD18A791D05E430E17C",
+    "9F76725BB20E3858484ADBCD3B5FBD5E",
+    "9BF8DCA3A55CF84FBE103FC3A121FAC0",
+    "A57206ECF56E0BD26026A92568E5F6363A5F747625168140",
+    "F670FC82C4D1D3265D9AE4ED34E478F9C0B572FC98A6B166",
+    "67EC286A7BFE2E1B1D351F92C4A939577A7F07C5867B28F0",
+    "178FFC043095B2585FA3E13BB176972AD5252EA768F61C48",
+    "3ACB83726C96B88D58B398EE775A471D8F093C7127287ACF",
+    "2D8A9E22F55D20FF366F41737E2E10CEC33A4BD3EB8DD268"};
 const char *strkmcas_hkdf[] = {
-    "6CB6C62AA34F1E4C23943663B4D48840",
-    "F1029D322632B91BA97FA308929E61D5",
-    "2025D7CC500F4C7759A7201A34A9E205",
-    "B4D24420223C495C2E12A50FD93C05B9",
-    "2D490429EE1F9F17CB05AE44691CCD09",
-    "4DF6A0FB71249E97C098BFF8F68C9760",
-    "33FB725B966F6C2D990B98265B467F6BB611ACF6AD284AA4",
-    "E22BDF8A0F358DC7AA80BB142FF0FD328DF575352D010950",
-    "A540725E733D8CCE09BC084385DDD8F03A9B4AF92AD7CF08",
-    "4AD2FA93C1E58F1DE44D5A6C5ED216F2E931E28A4C44662C",
-    "EF002D66B13574A50565FD949FA697B1E4E638D422C98080",
-    "ED94D90E304126A86A4BCD030236A306E2E6BA1824E8D90F"};
+    "EF9A2921CB65972A62F7F804ED85E821",
+    "8D21E6A821E2C826700D1335BAB743BE",
+    "ACA456FA684A77C399B000C0C33D35FC",
+    "63A63D958479D50C54BFEF6E2378DFD0",
+    "4FDDB5963E8A4849151C990DF7DF79E0",
+    "467F22E69F6D4102785F56542EB27722",
+    "D26E6C9C20092F19E7CAE84C276966C1654CBCDFE8A1CD6E",
+    "2946795DA5AA24B5AC452A10DED18764483570F86C235685",
+    "DCB2578839ED222BCFB76FC8BCC39BB680E494E04BDD6023",
+    "58EBCCA4031DE364EC9FAFF60F3A89F4B4BB3673D368A39D",
+    "7A978C2A92C280D43696C2FA7E3B81E0CEF8ABF66A371FFA",
+    "62A092870735330C42C65DEC93C7126C1BF2C9B7FB7BE7C1"};
 
 const char *strkmcat_hmac[] = {
-    "E5D337DF2D77ECE50E2DAA9E65F73D77",
-    "8EEC8502D551A1E46408D5673C8CB98F",
-    "B450CB239F23CCD820C0D4994D260234",
-    "3F0EC466248B91B18FA82A557C12E0E4",
-    "56617E0EC39843C6E41935F02A5D7FFD",
-    "1B57FF0AAA460D55099195DA71A9E23D",
-    "E26CB07AF36999973DE321AE13DB977C0EF37B18A430FC5F",
-    "C5AADE55D5BCE6EA33E971EF6A80F32EEECC418F490D1457",
-    "8C9700BE1498879F3AA886CCBDB513D91E4B73FDDF9ECEAD",
-    "7335508D7C14D92D98C3E8319773DC2B591245A7E926FAB0",
-    "A4E26D3B2EACC8E708DFA571CEEE057D2DF870A65F3C4E75",
-    "D0F6CBD16C466F331BD8E1716679673A5D73AADD221659ED"};
+    "ADD96EFF9C1101F47CA9672661B09279",
+    "63570405F6A5E93E7C18DEC492440934",
+    "63C42681514DBA0FBA07EF9A15EE2FA3",
+    "BA73DD7926410802A2138342E9343402",
+    "4716747AB18A00794A03F6BCAEF38304",
+    "0F0CB60499A1D789F21A7C325FBAED08",
+    "08045DD424DFF4B733E17A0D18AD6BD2E61BDB97A4EC5E43",
+    "85C83E7140ABCE1D03EDC0D8897443E31BF6230B3F55B76C",
+    "E52E530B95673083CBFA1C47FFC8384AB7112B3DC2CFED69",
+    "AD3DE03B074DC6E557CFD1A1784F1A16947131686DBB6304",
+    "889064E22170073E28DD47E0BBEB3EA23519DAA159D9957F",
+    "983DF0DCB974B8432A23EEA44F7C45D64E595804C5AD717C"};
 const char *strkmcas_hmac[] = {
-    "D696D1E075EA3B435D773C15B50F2A28",
-    "42B4C5C1162F0E47E004456310D3E460",
-    "85AB7C8DC9C922368C1F6FF48BE81ECD",
-    "7E12FBC4071218FA9D7B3DC21A651EA3",
-    "37A9900F776007E7FBE40A5486322855",
-    "3530F7B3284AFDEC9571E4F967C8025C",
-    "E157B71E03BB2D72D6709AEA3DDF8D6A86A248DCC9691B75",
-    "887AEC133D7D1B967A913F766AB9A61A78506652EBFEDEC9",
-    "B723BF81451D5A97CF6D9BB58421A94F588BCDD30EBC3710",
-    "9EFD0C9771DF02CF0EF9E031B3B872E4951D3CCB51B2DC02",
-    "1BE6EC5DF5765602EC08BC90205F5801B48FCF6797B5B340",
-    "5F6AC454E255DEDF959D9A92379C05837872343EE6A26E0A"};
+    "28A9F54DAD500D1EC8440D7EFB287951",
+    "406185493AF776AB172E2AE9009A9A68",
+    "1EA3701351FA75AFB0E6E3568D61ABAE",
+    "EFFFC9A571DA9DDDF27830348CB720E1",
+    "3903A760D2FE410915352D662FBAE999",
+    "45E41DBD1BCA0A5FC9013EDEDFB4A8E3",
+    "3B67197B0AAF64AE14E867B02AF8DA098EB789FF671E9FCA",
+    "92605F9280BC07392CBC4475BD819F2EDF7B20400D24607B",
+    "19926E7D800CCBA26BDFF7D62EDDCA6C0401310E6DB4A036",
+    "6EB1797B15FB7B275441A235027B9364F8E243C4BA538608",
+    "5C2A5B5DF5DA58A3F7DFD39CAE8974C6C7190524C5EB07C3",
+    "C84955FA91BC4168FADA42CDF8C1B9126A45350D507EEB77"};
 
 const char * strkmcat_kmac[] = {
-    "E0C0450A61C8D41399EC6E977B01A9B8",
-    "EA6284682CBD30A9E3B0F8E12D82C3FC",
-    "7B8C1993F70989F49CDA53EE425104FC",
-    "1154D484AAB6231EE566F303C68B1EE1",
-    "1B697069B3382C389E30ED03D59D2BAA",
-    "4AD0977C7B13CC303F80AF94CEF4F794",
-    "2E2AAD04AAEC48A1E63CB71CD0809B371337BDA451284320",
-    "396256789FF63394A529C19C675ED76D153E6B26260434BF",
-    "A4E152F60978ED019D81925026B34AD38BF3AE585871A834",
-    "D031355CD04CB5641B2427F03EBDE1316317C40202BCA698",
-    "A0034BE961F28D59F51A2F19EF46C73E178E64B1FF40A830",
-    "D42F58186B93D75205FAACB4C12E2137432D810332C0E463"};
+    "F912D14B2803AB71F8D16A984D2FCB3F",
+    "F446F61018FBEC6D0F9E3CA35D9F8D89",
+    "812ABB4D4436275BEDDAF043553CABC1",
+    "081DDCD090E8BEC249AC313C08B88819",
+    "0F7F60051D49C0D168EE55489B4CF8A3",
+    "07FE186265F1C7FFF7B9EB40686AC560",
+    "25BB20512166931BB7DEA9543E20EA0CAAF7D21F7B7AD489",
+    "BDB1E4C03D3C7DB95FEE1B3702F3B9D53A2D16816686DFCE",
+    "D4688B3DD5CDD9BEB8B42B4977C4EBADD00AC37EB2675608",
+    "E3343C8A559D7BDC8A36DE242495B754848494ED086E5E23",
+    "DB041145F4DA64468D822DCDD983CB71FC746A45ED9D699B",
+    "3B4953D8D9E6FFA50658FF66DAE3D582ECDC0130CDB69226"};
 const char * strkmcas_kmac[] = {
-    "C259F87E2ED94BB7B14A7B1671B7331F",
-    "ED5DA8596698221195B037DD33E3D48D",
-    "BBCAAACFB0C2D5A118C6065DDAD69D9A",
-    "A21B0F3D7546FFD4C2A7058AC9AE4D5B",
-    "BF7487D94D53B67C9F73A40293481833",
-    "2E36C5A9C64F3B12C5E990F4863A6E5E",
-    "3375C5D5743B7FD5296D2B637BE9A7F99205513399DBFA70",
-    "140A796FF48D8676B0827DEC83270A947C08A02D1A2BE6E7",
-    "F8D21D6F3A76A53E9E01273BE568FE838FA091309041BEA1",
-    "C1A533E56B5E65CB1389CD027FA16C7F1EFA213E5431BEAF",
-    "E43B62DBA135BAA51C3A75B55330FE2525AF33C12EA8158B",
-    "B991336BDE64ACE280989E26C8FEB6E772A662B3FF0567AB"};
+    "D3C03D6B763CBBF1B889B9847B97EAD2",
+    "123277F8381EACBEDCD0AA0B2BEF0D5B",
+    "959692AF1A06507AE5593932F4356BB8",
+    "E347BFE87BF7125B714C215A704AE44A",
+    "C2035D655A2DC124BD8AECF30A6975CC",
+    "C53301C20E1ECE48664DE09D284024DA",
+    "5A631527008F3D192E0BF1B34E4644566AB085A0A51CC8AC",
+    "6EDB10B2DB62C705447A3794BF9F471F88A788E9005DFBD4",
+    "F4549DFD0192F4F3BFA124C89B62D4818D52D6CA744D9922",
+    "DC101B8F1C68BC52641D0742D9A108D9C1A6BCCE9DAFA2CE",
+    "F8A373CDD72D54659FE1385855F921300D251283BD4971A3",
+    "13155CD7A939C0BD3D54C6F8A79D51CEB990577C20C8DB2B"};
 
 /*
  * print_array( )  - this function is intended only for use within this
@@ -1341,7 +1342,7 @@ void ascii_hex_strings_to_uint8(uint8_t *array, uint32_t *alength, const uint32_
     va_list     args;
 
     if ((array == NULL) || (alength == NULL)) {
-        exit(0);
+        exit(EXIT_FAILURE);
     }
     ptr              = array;
     remaining_length = *alength;
@@ -1350,17 +1351,17 @@ void ascii_hex_strings_to_uint8(uint8_t *array, uint32_t *alength, const uint32_
     for (i = 0; i < scount; i++) {
         if ((pos = va_arg(args, const char *)) == NULL) {
             va_end(args);
-            exit(0);
+            exit(EXIT_FAILURE);
         }
         str_length = (uint32_t)strlen(pos);
         if (str_length % 2) {
             va_end(args);
-            exit(0);
+            exit(EXIT_FAILURE);
         }
         *alength = *alength + (str_length / 2);
         if (remaining_length < str_length / 2) {
             va_end(args);
-            exit(0);
+            exit(EXIT_FAILURE);
         }
         for (j = 0; j < str_length / 2; j++) {
             sscanf(pos, "%2hhx", ptr++);
@@ -1383,7 +1384,7 @@ void message_formatting_function(uint8_t *array, uint32_t *alength, const uint32
     va_list     args;
 
     if ((array == NULL) || (alength == NULL)) {
-        exit(0);
+        exit(EXIT_FAILURE);
     }
     ptr              = array;
     remaining_length = *alength;
@@ -1392,32 +1393,37 @@ void message_formatting_function(uint8_t *array, uint32_t *alength, const uint32
     for (i = 0; i < scount; i++) {
         if ((pos = va_arg(args, const char *)) == NULL) {
             va_end(args);
-            exit(0);
+            exit(EXIT_FAILURE);
         }
         str_length = (uint32_t)strlen(pos);
         if (str_length % 2) {
             va_end(args);
-            exit(0);
-        }
-        if (remaining_length < str_length / 2) {
-            va_end(args);
-            exit(0);
+            exit(EXIT_FAILURE);
         }
         if (i != 0){
-            length = htonl(str_length);
+            if (remaining_length < (str_length + 8) / 2) {
+                va_end(args);
+                exit(EXIT_FAILURE);
+            }
+            length = htonl(str_length / 2);
             memcpy(ptr, &length, 4);
             ptr += 4;
-            *alength = *alength + ((str_length + 8) / 2 );
+            *alength = *alength + ((str_length + 8) / 2);
+            remaining_length -= (str_length + 8) / 2;
         }
         else {
-            *alength = *alength + ((str_length) / 2 );
+            if (remaining_length < str_length / 2) {
+                va_end(args);
+                exit(EXIT_FAILURE);
+            }
+            *alength = *alength + (str_length / 2);
+            remaining_length -= str_length / 2;
         }
 
-        for (j = 0; j < ((str_length) / 2); j++) {
+        for (j = 0; j < (str_length / 2); j++) {
             sscanf(pos, "%2hhx", ptr++);
             pos += 2;
         }
-        remaining_length -= (str_length ) / 2;
     }
     va_end(args);
     return;
@@ -2049,12 +2055,12 @@ int test_hkex_concatenate_hkdf_derand()
         */
         alength = sizeof(MA);
         message_formatting_function(MA, &alength, 2, cids_concatenate_hkdf[r], strLA1[r]);
-        length = htonl(PA_ECC_length*2);
+        length = htonl(PA_ECC_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_ECC, PA_ECC_length);
         alength += PA_ECC_length;
-        length = htonl(PA_PQ_length*2);
+        length = htonl(PA_PQ_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_PQ, PA_PQ_length);
@@ -2065,12 +2071,12 @@ int test_hkex_concatenate_hkdf_derand()
         */
         blength = sizeof(MB);
         message_formatting_function(MB, &blength, 2, cids_concatenate_hkdf[r], strLB1[r]);
-        length = htonl(PB_ECC_length*2);
+        length = htonl(PB_ECC_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, PB_ECC, PB_ECC_length);
         blength += PB_ECC_length;
-        length = htonl(CTB_PQ_length*2);
+        length = htonl(CTB_PQ_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, CTB_PQ, CTB_PQ_length);
@@ -2153,12 +2159,12 @@ int test_hkex_concatenate_hmac_derand()
         */
         alength = sizeof(MA);
         message_formatting_function(MA, &alength, 2, cids_concatenate_hmac[r], strLA1[r]);
-        length = htonl(PA_ECC_length*2);
+        length = htonl(PA_ECC_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_ECC, PA_ECC_length);
         alength += PA_ECC_length;
-        length = htonl(PA_PQ_length*2);
+        length = htonl(PA_PQ_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_PQ, PA_PQ_length);
@@ -2169,12 +2175,12 @@ int test_hkex_concatenate_hmac_derand()
         */
         blength = sizeof(MB);
         message_formatting_function(MB, &blength, 2, cids_concatenate_hmac[r], strLB1[r]);
-        length = htonl(PB_ECC_length*2);
+        length = htonl(PB_ECC_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, PB_ECC, PB_ECC_length);
         blength += PB_ECC_length;
-        length = htonl(CTB_PQ_length*2);
+        length = htonl(CTB_PQ_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, CTB_PQ, CTB_PQ_length);
@@ -2254,12 +2260,12 @@ int test_hkex_concatenate_kmac_derand()
         */
         alength = sizeof(MA);
         message_formatting_function(MA, &alength, 2, cids_concatenate_kmac[r], strLA1[r]);
-        length = htonl(PA_ECC_length*2);
+        length = htonl(PA_ECC_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_ECC, PA_ECC_length);
         alength += PA_ECC_length;
-        length = htonl(PA_PQ_length*2);
+        length = htonl(PA_PQ_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_PQ, PA_PQ_length);
@@ -2270,12 +2276,12 @@ int test_hkex_concatenate_kmac_derand()
         */
         blength = sizeof(MB);
         message_formatting_function(MB, &blength, 2, cids_concatenate_kmac[r], strLB1[r]);
-        length = htonl(PB_ECC_length*2);
+        length = htonl(PB_ECC_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, PB_ECC, PB_ECC_length);
         blength += PB_ECC_length;
-        length = htonl(CTB_PQ_length*2);
+        length = htonl(CTB_PQ_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, CTB_PQ, CTB_PQ_length);
@@ -2360,7 +2366,7 @@ int test_hkex_cascade_hkdf_derand()
         */
         alength = sizeof(MA);
         message_formatting_function(MA, &alength, 2, cids_cascade_hkdf[r], strLA1[r]);
-        length = htonl(PA_ECC_length*2);
+        length = htonl(PA_ECC_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_ECC, PA_ECC_length);
@@ -2371,7 +2377,7 @@ int test_hkex_cascade_hkdf_derand()
         */
         blength = sizeof(MB);
         message_formatting_function(MB, &blength, 2, cids_cascade_hkdf[r], strLB1[r]);
-        length = htonl(PB_ECC_length*2);
+        length = htonl(PB_ECC_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, PB_ECC, PB_ECC_length);
@@ -2417,7 +2423,7 @@ int test_hkex_cascade_hkdf_derand()
         */
         alength = sizeof(MA);
         message_formatting_function(MA, &alength, 2, cids_cascade_hkdf[r], strLA2[r]);
-        length = htonl(PA_PQ_length*2);
+        length = htonl(PA_PQ_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_PQ, PA_PQ_length);
@@ -2428,7 +2434,7 @@ int test_hkex_cascade_hkdf_derand()
         */
         blength = sizeof(MB);
         message_formatting_function(MB, &blength, 2, cids_cascade_hkdf[r], strLB2[r]);
-        length = htonl(CTB_PQ_length*2);
+        length = htonl(CTB_PQ_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, CTB_PQ, CTB_PQ_length);
@@ -2510,7 +2516,7 @@ int test_hkex_cascade_hmac_derand()
         */
         alength = sizeof(MA);
         message_formatting_function(MA, &alength, 2, cids_cascade_hmac[r], strLA1[r]);
-        length = htonl(PA_ECC_length*2);
+        length = htonl(PA_ECC_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_ECC, PA_ECC_length);
@@ -2521,7 +2527,7 @@ int test_hkex_cascade_hmac_derand()
         */
         blength = sizeof(MB);
         message_formatting_function(MB, &blength, 2, cids_cascade_hmac[r], strLB1[r]);
-        length = htonl(PB_ECC_length*2);
+        length = htonl(PB_ECC_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, PB_ECC, PB_ECC_length);
@@ -2567,7 +2573,7 @@ int test_hkex_cascade_hmac_derand()
         */
         alength = sizeof(MA);
         message_formatting_function(MA, &alength, 2, cids_cascade_hmac[r], strLA2[r]);
-        length = htonl(PA_PQ_length*2);
+        length = htonl(PA_PQ_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_PQ, PA_PQ_length);
@@ -2577,7 +2583,7 @@ int test_hkex_cascade_hmac_derand()
         */
         blength = sizeof(MB);
         message_formatting_function(MB, &blength, 2, cids_cascade_hmac[r], strLB2[r]);
-        length = htonl(CTB_PQ_length*2);
+        length = htonl(CTB_PQ_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, CTB_PQ, CTB_PQ_length);
@@ -2656,7 +2662,7 @@ int test_hkex_cascade_kmac_derand()
         */
         alength = sizeof(MA);
         message_formatting_function(MA, &alength, 2, cids_cascade_kmac[r], strLA1[r]);
-        length = htonl(PA_ECC_length*2);
+        length = htonl(PA_ECC_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_ECC, PA_ECC_length);
@@ -2667,7 +2673,7 @@ int test_hkex_cascade_kmac_derand()
         */
         blength = sizeof(MB);
         message_formatting_function(MB, &blength, 2, cids_cascade_kmac[r], strLB1[r]);
-        length = htonl(PB_ECC_length*2);
+        length = htonl(PB_ECC_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, PB_ECC, PB_ECC_length);
@@ -2719,7 +2725,7 @@ int test_hkex_cascade_kmac_derand()
         */
         alength = sizeof(MA);
         message_formatting_function(MA, &alength, 2, cids_cascade_kmac[r], strLA2[r]);
-        length = htonl(PA_PQ_length*2);
+        length = htonl(PA_PQ_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_PQ, PA_PQ_length);
@@ -2730,7 +2736,7 @@ int test_hkex_cascade_kmac_derand()
         */
         blength = sizeof(MB);
         message_formatting_function(MB, &blength, 2, cids_cascade_kmac[r], strLB2[r]);
-        length = htonl(CTB_PQ_length*2);
+        length = htonl(CTB_PQ_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, CTB_PQ, CTB_PQ_length);
@@ -2811,12 +2817,12 @@ int test_hkex_concatenate_hkdf_rand()
         */
         alength = sizeof(MA);
         message_formatting_function(MA, &alength, 2, cids_concatenate_hkdf[r], strLA1[r]);
-        length = htonl(PA_ECC_length*2);
+        length = htonl(PA_ECC_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_ECC, PA_ECC_length);
         alength += PA_ECC_length;
-        length = htonl(PA_PQ_length*2);
+        length = htonl(PA_PQ_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_PQ, PA_PQ_length);
@@ -2827,12 +2833,12 @@ int test_hkex_concatenate_hkdf_rand()
         */
         blength = sizeof(MB);
         message_formatting_function(MB, &blength, 2, cids_concatenate_hkdf[r], strLB1[r]);
-        length = htonl(PB_ECC_length*2);
+        length = htonl(PB_ECC_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, PB_ECC, PB_ECC_length);
         blength += PB_ECC_length;
-        length = htonl(CTB_PQ_length*2);
+        length = htonl(CTB_PQ_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, CTB_PQ, CTB_PQ_length);
@@ -2907,12 +2913,12 @@ int test_hkex_concatenate_hmac_rand()
         */
         alength = sizeof(MA);
         message_formatting_function(MA, &alength, 2, cids_concatenate_hmac[r], strLA1[r]);
-        length = htonl(PA_ECC_length*2);
+        length = htonl(PA_ECC_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_ECC, PA_ECC_length);
         alength += PA_ECC_length;
-        length = htonl(PA_PQ_length*2);
+        length = htonl(PA_PQ_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_PQ, PA_PQ_length);
@@ -2923,12 +2929,12 @@ int test_hkex_concatenate_hmac_rand()
         */
         blength = sizeof(MB);
         message_formatting_function(MB, &blength, 2, cids_concatenate_hmac[r], strLB1[r]);
-        length = htonl(PB_ECC_length*2);
+        length = htonl(PB_ECC_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, PB_ECC, PB_ECC_length);
         blength += PB_ECC_length;
-        length = htonl(CTB_PQ_length*2);
+        length = htonl(CTB_PQ_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, CTB_PQ, CTB_PQ_length);
@@ -2999,12 +3005,12 @@ int test_hkex_concatenate_kmac_rand()
         */
         alength = sizeof(MA);
         message_formatting_function(MA, &alength, 2, cids_concatenate_kmac[r], strLA1[r]);
-        length = htonl(PA_ECC_length*2);
+        length = htonl(PA_ECC_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_ECC, PA_ECC_length);
         alength += PA_ECC_length;
-        length = htonl(PA_PQ_length*2);
+        length = htonl(PA_PQ_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_PQ, PA_PQ_length);
@@ -3015,12 +3021,12 @@ int test_hkex_concatenate_kmac_rand()
         */
         blength = sizeof(MB);
         message_formatting_function(MB, &blength, 2, cids_concatenate_kmac[r], strLB1[r]);
-        length = htonl(PB_ECC_length*2);
+        length = htonl(PB_ECC_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, PB_ECC, PB_ECC_length);
         blength += PB_ECC_length;
-        length = htonl(CTB_PQ_length*2);
+        length = htonl(CTB_PQ_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, CTB_PQ, CTB_PQ_length);
@@ -3097,7 +3103,7 @@ int test_hkex_cascade_hkdf_rand()
         */
         alength = sizeof(MA);
         message_formatting_function(MA, &alength, 2, cids_cascade_hkdf[r], strLA1[r]);
-        length = htonl(PA_ECC_length*2);
+        length = htonl(PA_ECC_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_ECC, PA_ECC_length);
@@ -3108,7 +3114,7 @@ int test_hkex_cascade_hkdf_rand()
         */
         blength = sizeof(MB);
         message_formatting_function(MB, &blength, 2, cids_cascade_hkdf[r], strLB1[r]);
-        length = htonl(PB_ECC_length*2);
+        length = htonl(PB_ECC_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, PB_ECC, PB_ECC_length);
@@ -3154,7 +3160,7 @@ int test_hkex_cascade_hkdf_rand()
         */
         alength = sizeof(MA);
         message_formatting_function(MA, &alength, 2, cids_cascade_hkdf[r], strLA2[r]);
-        length = htonl(PA_PQ_length*2);
+        length = htonl(PA_PQ_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_PQ, PA_PQ_length);
@@ -3165,7 +3171,7 @@ int test_hkex_cascade_hkdf_rand()
         */
         blength = sizeof(MB);
         message_formatting_function(MB, &blength, 2, cids_cascade_hkdf[r], strLB2[r]);
-        length = htonl(CTB_PQ_length*2);
+        length = htonl(CTB_PQ_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, CTB_PQ, CTB_PQ_length);
@@ -3239,7 +3245,7 @@ int test_hkex_cascade_hmac_rand()
         */
         alength = sizeof(MA);
         message_formatting_function(MA, &alength, 2, cids_cascade_hmac[r], strLA1[r]);
-        length = htonl(PA_ECC_length*2);
+        length = htonl(PA_ECC_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_ECC, PA_ECC_length);
@@ -3250,7 +3256,7 @@ int test_hkex_cascade_hmac_rand()
         */
         blength = sizeof(MB);
         message_formatting_function(MB, &blength, 2, cids_cascade_hmac[r], strLB1[r]);
-        length = htonl(PB_ECC_length*2);
+        length = htonl(PB_ECC_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, PB_ECC, PB_ECC_length);
@@ -3296,7 +3302,7 @@ int test_hkex_cascade_hmac_rand()
         */
         alength = sizeof(MA);
         message_formatting_function(MA, &alength, 2, cids_cascade_hmac[r], strLA2[r]);
-        length = htonl(PA_PQ_length*2);
+        length = htonl(PA_PQ_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_PQ, PA_PQ_length);
@@ -3306,7 +3312,7 @@ int test_hkex_cascade_hmac_rand()
         */
         blength = sizeof(MB);
         message_formatting_function(MB, &blength, 2, cids_cascade_hmac[r], strLB2[r]);
-        length = htonl(CTB_PQ_length*2);
+        length = htonl(CTB_PQ_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, CTB_PQ, CTB_PQ_length);
@@ -3377,7 +3383,7 @@ int test_hkex_cascade_kmac_rand()
         */
         alength = sizeof(MA);
         message_formatting_function(MA, &alength, 2, cids_cascade_kmac[r], strLA1[r]);
-        length = htonl(PA_ECC_length*2);
+        length = htonl(PA_ECC_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_ECC, PA_ECC_length);
@@ -3388,7 +3394,7 @@ int test_hkex_cascade_kmac_rand()
         */
         blength = sizeof(MB);
         message_formatting_function(MB, &blength, 2, cids_cascade_kmac[r], strLB1[r]);
-        length = htonl(PB_ECC_length*2);
+        length = htonl(PB_ECC_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, PB_ECC, PB_ECC_length);
@@ -3440,7 +3446,7 @@ int test_hkex_cascade_kmac_rand()
         */
         alength = sizeof(MA);
         message_formatting_function(MA, &alength, 2, cids_cascade_kmac[r], strLA2[r]);
-        length = htonl(PA_PQ_length*2);
+        length = htonl(PA_PQ_length);
         my_memcpy(MA + alength, &length, sizeof(uint32_t));
         alength += sizeof(uint32_t);
         my_memcpy(MA + alength, PA_PQ, PA_PQ_length);
@@ -3451,7 +3457,7 @@ int test_hkex_cascade_kmac_rand()
         */
         blength = sizeof(MB);
         message_formatting_function(MB, &blength, 2, cids_cascade_kmac[r], strLB2[r]);
-        length = htonl(CTB_PQ_length*2);
+        length = htonl(CTB_PQ_length);
         my_memcpy(MB + blength, &length, sizeof(uint32_t));
         blength += sizeof(uint32_t);
         my_memcpy(MB + blength, CTB_PQ, CTB_PQ_length);

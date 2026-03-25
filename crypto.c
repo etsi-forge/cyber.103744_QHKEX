@@ -1,11 +1,11 @@
 /*
     This file implements ETSI TC CYBER QSC Quantum-safe Hybrid Key Exchanges
-    (Version 1.1.1)
+    (Version 1.2.1)
 
     This is not intended for production use.  It is intended to be a reference
     implementation for test vectors for the specification.
 
-    It uses OpenSSL version 3.4.0 libcrypto.
+    It uses OpenSSL version 3.2 libcrypto.
 
     gcc -Wall -o etsi-hkex-test main.c crypto.c qshkex.c -lcrypto -loqs
     ./etsi-hkex-test
@@ -141,7 +141,7 @@ int test_qhkex_derand_ecdh(const int curve, const char *priv_dataA, const char *
                     break;
             }
             rval = SUCCESS;
-            }   
+        }
     } while (0);
     if (privA) {
         BN_free(privA);
@@ -202,10 +202,10 @@ int test_qhkex_derand_mlkem(const char * alg_name, uint8_t *pubA, size_t *PA2len
                 break;
         }
         rval = SUCCESS;
-        } while (0);
-        if (kem) {
-            OQS_KEM_free(kem);
-        }
+    } while (0);
+    if (kem) {
+        OQS_KEM_free(kem);
+    }
     return rval;
 }
 
@@ -232,7 +232,7 @@ int test_qhkex_rand_ecdh(int curve, uint8_t *pubA, size_t *PA1length, uint8_t *p
         if (EVP_PKEY_keygen_init(ctxA) <= 0) {
             break;
         }
-        if (curve != EVP_PKEY_X25519 || curve != EVP_PKEY_X448) {
+        if (curve != EVP_PKEY_X25519 && curve != EVP_PKEY_X448) {
             if (EVP_PKEY_CTX_set_ec_paramgen_curve_nid(ctxA, curve) <= 0) {
                 break;
             }
@@ -240,11 +240,12 @@ int test_qhkex_rand_ecdh(int curve, uint8_t *pubA, size_t *PA1length, uint8_t *p
         if (EVP_PKEY_keygen(ctxA, &pkeyA) <= 0) {
             break;
         }
-        if (curve != EVP_PKEY_X25519 || curve != EVP_PKEY_X448) {
-            if (EVP_PKEY_get_octet_string_param(pkeyA, "pub", pubA, MAX_KEY_BYTE_LEN, &pubA_len) <=0 ) {
+        if (curve != EVP_PKEY_X25519 && curve != EVP_PKEY_X448) {
+            if (EVP_PKEY_get_octet_string_param(pkeyA, "pub", pubA, MAX_KEY_BYTE_LEN, &pubA_len) <= 0) {
                 break;
             }
         } else {
+            pubA_len = MAX_KEY_BYTE_LEN;
             if (EVP_PKEY_get_raw_public_key(pkeyA, pubA, &pubA_len) <= 0) {
                 break;
             }
@@ -264,24 +265,28 @@ int test_qhkex_rand_ecdh(int curve, uint8_t *pubA, size_t *PA1length, uint8_t *p
         if (EVP_PKEY_keygen_init(ctxB) <= 0) {
             break;
         }
-        if (EVP_PKEY_CTX_set_ec_paramgen_curve_nid(ctxB, curve) <= 0) {
-            break;
+        if (curve != EVP_PKEY_X25519 && curve != EVP_PKEY_X448) {
+            if (EVP_PKEY_CTX_set_ec_paramgen_curve_nid(ctxB, curve) <= 0) {
+                break;
+            }
         }
         if (EVP_PKEY_keygen(ctxB, &pkeyB) <= 0) {
             break;
         }
-        if (curve != EVP_PKEY_X25519 || curve != EVP_PKEY_X448) {
+        if (curve != EVP_PKEY_X25519 && curve != EVP_PKEY_X448) {
             if (EVP_PKEY_get_octet_string_param(pkeyB, "pub", pubB, MAX_KEY_BYTE_LEN, &pubB_len) <= 0) {
                 break;
             }
         } else {
-        if (EVP_PKEY_get_raw_public_key(pkeyB, pubB, &pubB_len) <= 0) {
+            pubB_len = MAX_KEY_BYTE_LEN;
+            if (EVP_PKEY_get_raw_public_key(pkeyB, pubB, &pubB_len) <= 0) {
                 break;
             }
         }
         *PB1length = pubB_len;
 
         // Derive entity A shared secret
+        EVP_PKEY_CTX_free(ctxA);
         ctxA = EVP_PKEY_CTX_new(pkeyA, NULL);
         if (!ctxA) {
             break;
@@ -300,6 +305,7 @@ int test_qhkex_rand_ecdh(int curve, uint8_t *pubA, size_t *PA1length, uint8_t *p
         }
 
         // Derive entity B shared secret
+        EVP_PKEY_CTX_free(ctxB);
         ctxB = EVP_PKEY_CTX_new(pkeyB, NULL);
         if (!ctxB) {
             break;
